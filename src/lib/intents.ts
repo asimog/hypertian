@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { createId } from '@/lib/ids';
 import { getLeaseById, processStreamKernel } from '@/lib/kernel';
 import { resolveDexscreenerUrl } from '@/lib/dexscreener';
-import { createDepositWallet, INTENT_TTL_MS, observeDepositPayment } from '@/lib/payments';
+import {
+  createDepositWallet,
+  forwardDepositToRecipients,
+  INTENT_TTL_MS,
+  observeDepositPayment,
+} from '@/lib/payments';
 import { getDb } from '@/lib/firestore';
 import { getPricing, getPricingTier } from '@/lib/pricing';
 import { maybeRefreshLiveIndex } from '@/lib/live-index';
@@ -344,6 +349,10 @@ export async function pollIntentStatus(intentId: string) {
     }
   }
 
+  if (intent && intent.status === 'CONFIRMED' && intent.payoutStatus !== 'FORWARDED') {
+    intent = await ensureIntentPayoutForwarded(intentId);
+  }
+
   if (!intent) {
     intent = await getIntentById(intentId);
   }
@@ -371,4 +380,119 @@ export async function pollIntentStatus(intentId: string) {
     intent,
     lease,
   };
+}
+
+export async function ensureIntentPayoutForwarded(intentId: string) {
+  const db = getDb();
+  const intentRef = db.collection('intents').doc(intentId);
+
+  const claimed = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(intentRef);
+    if (!snapshot.exists) {
+      return null;
+    }
+
+    const intent = hydrateIntentRecord(snapshot.id, snapshot.data() as Record<string, unknown>);
+    if (intent.status !== 'CONFIRMED') {
+      return intent;
+    }
+
+    if (intent.payoutStatus === 'FORWARDED' || intent.payoutStatus === 'PROCESSING') {
+      return intent;
+    }
+
+    transaction.set(
+      intentRef,
+      {
+        payoutStatus: 'PROCESSING',
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
+
+    return {
+      ...intent,
+      payoutStatus: 'PROCESSING' as const,
+    };
+  });
+
+  if (!claimed) {
+    return null;
+  }
+
+  if (claimed.status !== 'CONFIRMED' || claimed.payoutStatus === 'FORWARDED') {
+    return claimed;
+  }
+
+  const stream = await getStreamById(claimed.streamId);
+  if (!stream) {
+    throw new Error('Stream not found for payout forwarding.');
+  }
+
+  try {
+    const payout = await forwardDepositToRecipients({
+      depositSecretCiphertext: claimed.depositSecretCiphertext,
+      grossLamports: claimed.depositObservedLamports || claimed.amountLamports,
+      streamerWallet: stream.deployerWallet,
+    });
+
+    await intentRef.set(
+      {
+        payoutStatus: 'FORWARDED',
+        forwardTxSignature: payout.forwardTxSignature,
+        streamerPayoutLamports: payout.streamerPayoutLamports,
+        treasuryPayoutLamports: payout.treasuryPayoutLamports,
+        feeLamports: payout.feeLamports,
+        payoutFailureReason: null,
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
+
+    await getDb()
+      .collection('streams')
+      .doc(claimed.streamId)
+      .collection('events')
+      .doc(`intent_${intentId}_forwarded`)
+      .set({
+        type: 'payout_forwarded',
+        message: 'Payment was auto-forwarded to the streamer wallet and treasury.',
+        metadata: {
+          intentId,
+          forwardTxSignature: payout.forwardTxSignature,
+          streamerPayoutLamports: payout.streamerPayoutLamports,
+          treasuryPayoutLamports: payout.treasuryPayoutLamports,
+          feeLamports: payout.feeLamports,
+        } satisfies EventMetadata,
+        createdAt: new Date(),
+      });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Payout forwarding failed.';
+
+    await intentRef.set(
+      {
+        payoutStatus: 'FAILED',
+        payoutFailureReason: message,
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
+
+    await getDb()
+      .collection('streams')
+      .doc(claimed.streamId)
+      .collection('events')
+      .doc(`intent_${intentId}_forward_failed`)
+      .set({
+        type: 'payout_failed',
+        message: 'Auto-forwarding failed and needs a retry.',
+        metadata: {
+          intentId,
+          error: message,
+        } satisfies EventMetadata,
+        createdAt: new Date(),
+      });
+  }
+
+  return getIntentById(intentId);
 }

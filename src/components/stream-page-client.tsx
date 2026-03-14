@@ -50,11 +50,12 @@ interface CreatedIntent {
 interface IntentStatusPayload {
   intentId: string;
   status: 'PENDING_PAYMENT' | 'CONFIRMED' | 'EXPIRED';
-  payoutStatus: 'PENDING' | 'FORWARDED' | 'FAILED';
+  payoutStatus: 'PENDING' | 'PROCESSING' | 'FORWARDED' | 'FAILED';
   leaseStatus: 'QUEUED' | 'ACTIVE' | 'COMPLETED' | 'PREEMPTED' | null;
   leaseEndsAt: string | null;
   paidAt: string | null;
   forwardTxSignature: string | null;
+  payoutFailureReason?: string | null;
 }
 
 function formatTimestamp(value: string | null): string {
@@ -481,8 +482,11 @@ export function StreamPageClient({
                 {intentStatus ? (
                   <div className="status info">
                     Payment status: {intentStatus.status}
+                    {intentStatus.payoutStatus ? ` · Payout: ${intentStatus.payoutStatus}` : ''}
                     {intentStatus.leaseStatus ? ` · Lease: ${intentStatus.leaseStatus}` : ''}
                     {intentStatus.leaseEndsAt ? ` · Ends: ${formatTimestamp(intentStatus.leaseEndsAt)}` : ''}
+                    {intentStatus.forwardTxSignature ? ` · Tx: ${intentStatus.forwardTxSignature}` : ''}
+                    {intentStatus.payoutFailureReason ? ` · Retry: ${intentStatus.payoutFailureReason}` : ''}
                   </div>
                 ) : null}
               </div>

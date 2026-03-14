@@ -2,9 +2,12 @@ import {
   Connection,
   Keypair,
   PublicKey,
+  SystemProgram,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { decryptSecret, encryptSecret } from '@/lib/crypto';
-import { getSolanaRpcUrl } from '@/lib/env';
+import { getPlatformTreasury, getSolanaRpcUrl } from '@/lib/env';
 
 export const INTENT_TTL_MS = 15 * 60 * 1000;
 
@@ -17,6 +20,13 @@ export interface DepositPaymentObservation {
   paid: boolean;
   observedLamports: number;
   signature: string | null;
+}
+
+export interface ForwardDepositResult {
+  forwardTxSignature: string;
+  streamerPayoutLamports: number;
+  treasuryPayoutLamports: number;
+  feeLamports: number;
 }
 
 let sharedConnection: Connection | null = null;
@@ -63,5 +73,106 @@ export async function observeDepositPayment(
     paid: observedLamports >= minimumLamports,
     observedLamports,
     signature,
+  };
+}
+
+async function estimateTransferFeeLamports(
+  payer: PublicKey,
+  streamerWallet: PublicKey,
+  treasuryWallet: PublicKey,
+) {
+  const connection = getSolanaConnection();
+  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  const message = new TransactionMessage({
+    payerKey: payer,
+    recentBlockhash: blockhash,
+    instructions: [
+      SystemProgram.transfer({
+        fromPubkey: payer,
+        toPubkey: streamerWallet,
+        lamports: 1,
+      }),
+      SystemProgram.transfer({
+        fromPubkey: payer,
+        toPubkey: treasuryWallet,
+        lamports: 1,
+      }),
+    ],
+  }).compileToV0Message();
+
+  const feeResponse = await connection.getFeeForMessage(message, 'confirmed');
+  return feeResponse.value ?? 5_000;
+}
+
+export async function forwardDepositToRecipients(input: {
+  depositSecretCiphertext: string;
+  grossLamports: number;
+  streamerWallet: string;
+}): Promise<ForwardDepositResult> {
+  const connection = getSolanaConnection();
+  const payer = decryptDepositWallet(input.depositSecretCiphertext);
+  const streamerWallet = new PublicKey(input.streamerWallet);
+  const treasuryWallet = new PublicKey(getPlatformTreasury());
+  const currentBalance = await connection.getBalance(payer.publicKey, 'confirmed');
+  const grossLamports = Math.min(currentBalance, input.grossLamports);
+
+  if (grossLamports <= 0) {
+    throw new Error('Deposit wallet has no balance to forward.');
+  }
+
+  const feeLamports = await estimateTransferFeeLamports(payer.publicKey, streamerWallet, treasuryWallet);
+  const streamerPayoutLamports = Math.floor(grossLamports * 0.9);
+  const treasuryPayoutLamports = Math.max(grossLamports - streamerPayoutLamports - feeLamports, 0);
+
+  if (streamerPayoutLamports <= 0) {
+    throw new Error('Streamer payout would be empty.');
+  }
+
+  const instructions = [
+    SystemProgram.transfer({
+      fromPubkey: payer.publicKey,
+      toPubkey: streamerWallet,
+      lamports: streamerPayoutLamports,
+    }),
+  ];
+
+  if (treasuryPayoutLamports > 0) {
+    instructions.push(
+      SystemProgram.transfer({
+        fromPubkey: payer.publicKey,
+        toPubkey: treasuryWallet,
+        lamports: treasuryPayoutLamports,
+      }),
+    );
+  }
+
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+  const message = new TransactionMessage({
+    payerKey: payer.publicKey,
+    recentBlockhash: blockhash,
+    instructions,
+  }).compileToV0Message();
+  const transaction = new VersionedTransaction(message);
+  transaction.sign([payer]);
+
+  const forwardTxSignature = await connection.sendTransaction(transaction, {
+    preflightCommitment: 'confirmed',
+    maxRetries: 3,
+  });
+
+  await connection.confirmTransaction(
+    {
+      signature: forwardTxSignature,
+      blockhash,
+      lastValidBlockHeight,
+    },
+    'confirmed',
+  );
+
+  return {
+    forwardTxSignature,
+    streamerPayoutLamports,
+    treasuryPayoutLamports,
+    feeLamports,
   };
 }

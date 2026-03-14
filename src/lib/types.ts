@@ -1,7 +1,7 @@
 export type PricingTier = 'BASE' | 'PRIORITY';
 export type IntentStatus = 'PENDING_PAYMENT' | 'CONFIRMED' | 'EXPIRED';
 export type LeaseStatus = 'QUEUED' | 'ACTIVE' | 'COMPLETED' | 'PREEMPTED';
-export type PayoutStatus = 'PENDING' | 'FORWARDED' | 'FAILED';
+export type PayoutStatus = 'PENDING' | 'PROCESSING' | 'FORWARDED' | 'FAILED';
 
 export interface EventMetadata {
   [key: string]: boolean | number | string | null;

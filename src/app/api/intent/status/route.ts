@@ -32,6 +32,7 @@ export async function GET(request: Request) {
       leaseStatus: status.lease?.status ?? null,
       leaseEndsAt: status.lease?.endsAt?.toISOString() ?? null,
       forwardTxSignature: status.intent.forwardTxSignature,
+      payoutFailureReason: status.intent.payoutFailureReason,
     });
   } catch (error) {
     if (error instanceof Error) {
