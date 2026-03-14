@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { badRequest, notFound, ok } from '@/lib/http';
+import { processStreamKernel, needsKernelTick } from '@/lib/kernel';
 import { clearExpiredVerifyNonceIfNeeded, isOverlayKeyValid } from '@/lib/overlay';
 import { getStreamById } from '@/lib/streams';
 
@@ -30,7 +31,15 @@ export async function GET(request: Request) {
     return badRequest('Overlay access denied.');
   }
 
-  const currentStream = await clearExpiredVerifyNonceIfNeeded(stream);
+  let currentStream = await clearExpiredVerifyNonceIfNeeded(stream);
+  if (needsKernelTick(currentStream)) {
+    await processStreamKernel(currentStream.streamId);
+    const refreshedStream = await getStreamById(currentStream.streamId);
+    if (refreshedStream) {
+      currentStream = refreshedStream;
+    }
+  }
+
   const changed = parsed.data.sinceNonce == null || parsed.data.sinceNonce !== currentStream.overlay.stateNonce;
 
   return ok({

@@ -258,13 +258,10 @@ export async function getAllStreams() {
 }
 
 export async function getLiveStreams() {
-  const snapshot = await getDb()
-    .collection('streams')
-    .where('liveStatus.isLive', '==', true)
-    .orderBy('liveStatus.viewers', 'desc')
-    .get();
-
-  return snapshot.docs.map((doc) => hydrateStreamRecord(doc.id, doc.data() as Record<string, unknown>));
+  const streams = await getAllStreams();
+  return streams
+    .filter((stream) => stream.liveStatus.isLive)
+    .sort((left, right) => right.liveStatus.viewers - left.liveStatus.viewers);
 }
 
 export async function getRecentStreamEvents(streamId: string, limitCount = 20): Promise<StreamEventRecord[]> {
