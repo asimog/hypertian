@@ -4,6 +4,7 @@ import { TopNav } from '@/components/top-nav';
 
 const CAMIUP_LINK = 'https://pump.fun/coin/AAvaTKQwJCoNxLK6zFts7MqvMK9F2DG13wZdExs8pump';
 const CAMIUP_CONTRACT = 'AAvaTKQwJCoNxLK6zFts7MqvMK9F2DG13wZdExs8pump';
+const GITHUB_ORG_LINK = 'https://github.com/InterloperProtocol';
 
 export default function HomePage() {
   return (
@@ -126,7 +127,7 @@ export default function HomePage() {
           </Link>
           <Link
             className="button secondary"
-            href="https://github.com/InterloperProtocol/CamiKey"
+            href={GITHUB_ORG_LINK}
             rel="noreferrer"
             target="_blank"
           >
