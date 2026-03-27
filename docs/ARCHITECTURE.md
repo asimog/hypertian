@@ -15,6 +15,7 @@ CAMIKey only supports Pump.fun livestreams and only swaps Dexscreener charts ins
 - `/start`: streamer registration.
 - `/ads`: advertiser dashboard showing only live registered streams.
 - `/[slug]`: combined streamer control page and buyer purchase page.
+- `/jobs/[intentId]`: dedicated payment and queue tracker for a single buyer job.
 - `/o/[streamId]?k=...`: OBS Browser Source overlay endpoint.
 
 ## Firestore Model
@@ -123,12 +124,13 @@ Dexscreener resolution for the buyer mint is also required before an intent is c
 2. Buyer enters only the token mint.
 3. CAMIKey creates a unique deposit wallet for that intent.
 4. Buyer sends the exact SOL amount.
-5. `GET /api/intent/status` polls the deposit address until:
-    - payment is detected
-    - the intent expires
-6. Once payment confirms:
-   - the intent is marked confirmed
-   - a lease is created and queued
+5. CAMIKey sends the buyer to `/jobs/[intentId]`.
+6. `GET /api/intent/status` polls the deposit address until:
+     - payment is detected
+     - the intent expires
+7. Once payment confirms:
+    - the intent is marked confirmed
+    - a lease is created and queued
     - the stream kernel is processed
     - payout forwarding is attempted
 
@@ -156,8 +158,8 @@ query every 500ms.
 
 ### Tier Durations
 
-- `BASE`: `0.04 SOL` for `120s`
-- `PRIORITY`: `0.10 SOL` for `600s`
+- `BASE`: `0.01 SOL` for `120s`
+- `PRIORITY`: `0.04 SOL` for `600s`
 
 ### Rules
 

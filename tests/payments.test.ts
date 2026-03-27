@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PublicKey } from '@solana/web3.js';
 import {
+  getParsedTransactionsIndividually,
   getIncomingLamportsForAddress,
   selectObservedDepositPayment,
 } from '../src/lib/payments';
@@ -48,5 +49,21 @@ describe('deposit payment observation', () => {
     } as never;
 
     expect(getIncomingLamportsForAddress(transaction, depositAddress)).toBe(40_000);
+  });
+
+  it('loads parsed transactions one signature at a time for RPC providers that reject batch parsing', async () => {
+    const calls: Array<{ signature: string; options: Record<string, unknown> }> = [];
+    const connection = {
+      async getParsedTransaction(signature: string, options: Record<string, unknown>) {
+        calls.push({ signature, options });
+        return null;
+      },
+    };
+
+    await getParsedTransactionsIndividually(connection as never, ['sig_one', 'sig_two']);
+
+    expect(calls.map((call) => call.signature)).toEqual(['sig_one', 'sig_two']);
+    expect(calls.every((call) => call.options.commitment === 'confirmed')).toBe(true);
+    expect(calls.every((call) => call.options.maxSupportedTransactionVersion === 0)).toBe(true);
   });
 });

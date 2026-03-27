@@ -36,6 +36,10 @@ export interface ForwardDepositResult {
 }
 
 let sharedConnection: Connection | null = null;
+const PARSED_TRANSACTION_OPTIONS = {
+  commitment: 'confirmed' as const,
+  maxSupportedTransactionVersion: 0 as const,
+};
 
 export function getSolanaConnection() {
   if (sharedConnection) {
@@ -97,6 +101,15 @@ export function selectObservedDepositPayment(input: {
   };
 }
 
+export async function getParsedTransactionsIndividually(
+  connection: Pick<Connection, 'getParsedTransaction'>,
+  signatures: string[],
+) {
+  return Promise.all(
+    signatures.map((signature) => connection.getParsedTransaction(signature, PARSED_TRANSACTION_OPTIONS)),
+  );
+}
+
 export async function observeDepositPayment(
   depositAddress: string,
   minimumLamports: number,
@@ -116,10 +129,7 @@ export async function observeDepositPayment(
     };
   }
 
-  const parsedTransactions = await connection.getParsedTransactions(confirmedSignatures, {
-    commitment: 'confirmed',
-    maxSupportedTransactionVersion: 0,
-  });
+  const parsedTransactions = await getParsedTransactionsIndividually(connection, confirmedSignatures);
   const transfers = confirmedSignatures
     .map((signature, index) => ({
       signature,

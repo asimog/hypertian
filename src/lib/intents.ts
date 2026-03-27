@@ -178,6 +178,7 @@ export async function createIntent(input: z.infer<typeof createIntentSchema>) {
     displaySeconds: pricing.displaySeconds,
     depositAddress: deposit.depositAddress,
     expiresAt: expiresAt.toISOString(),
+    jobPath: `/jobs/${intentId}`,
   };
 }
 

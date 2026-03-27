@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface StreamPageClientProps {
   streamId: string;
@@ -37,25 +38,10 @@ type VerifyUiState = 'idle' | 'pending' | 'success' | 'error';
 type PurchaseUiState = 'idle' | 'creating' | 'ready' | 'error';
 type PurchaseTier = 'BASE' | 'PRIORITY';
 
-interface CreatedIntent {
+interface CreateIntentResponse {
   intentId: string;
-  depositAddress: string;
-  amountSol: number;
-  amountLamports: number;
-  displaySeconds: number;
-  expiresAt: string;
-  tier: PurchaseTier;
-}
-
-interface IntentStatusPayload {
-  intentId: string;
-  status: 'PENDING_PAYMENT' | 'CONFIRMED' | 'EXPIRED';
-  payoutStatus: 'PENDING' | 'PROCESSING' | 'FORWARDED' | 'FAILED';
-  leaseStatus: 'QUEUED' | 'ACTIVE' | 'COMPLETED' | 'PREEMPTED' | null;
-  leaseEndsAt: string | null;
-  paidAt: string | null;
-  forwardTxSignature: string | null;
-  payoutFailureReason?: string | null;
+  jobPath: string;
+  error?: string;
 }
 
 function formatTimestamp(value: string | null): string {
@@ -67,22 +53,6 @@ function formatTimestamp(value: string | null): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
-}
-
-function formatRelativeCountdown(expiresAt: string | null): string {
-  if (!expiresAt) {
-    return 'Unknown';
-  }
-
-  const remainingMs = new Date(expiresAt).getTime() - Date.now();
-  if (remainingMs <= 0) {
-    return 'Expired';
-  }
-
-  const totalSeconds = Math.ceil(remainingMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
 }
 
 export function StreamPageClient({
@@ -101,6 +71,7 @@ export function StreamPageClient({
   pricing,
   events,
 }: StreamPageClientProps) {
+  const router = useRouter();
   const [verifyState, setVerifyState] = useState<VerifyUiState>('idle');
   const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
   const [currentVerifiedAt, setCurrentVerifiedAt] = useState<string | null>(verifiedAt);
@@ -109,8 +80,7 @@ export function StreamPageClient({
   const [buyerMint, setBuyerMint] = useState('');
   const [purchaseState, setPurchaseState] = useState<PurchaseUiState>('idle');
   const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null);
-  const [createdIntent, setCreatedIntent] = useState<CreatedIntent | null>(null);
-  const [intentStatus, setIntentStatus] = useState<IntentStatusPayload | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const tickerEvents =
     events.length > 0
@@ -125,10 +95,10 @@ export function StreamPageClient({
         ];
 
   const currentVerificationFresh = currentVerifiedAt
-    ? Date.now() - new Date(currentVerifiedAt).getTime() < 12 * 60 * 60 * 1000
+    ? nowMs - new Date(currentVerifiedAt).getTime() < 12 * 60 * 60 * 1000
     : verificationFresh;
   const currentHeartbeatFresh = currentHeartbeatAt
-    ? Date.now() - new Date(currentHeartbeatAt).getTime() < 30 * 1000
+    ? nowMs - new Date(currentHeartbeatAt).getTime() < 30 * 1000
     : heartbeatFresh;
   const effectiveCanPurchase = liveFresh && currentHeartbeatFresh && currentVerificationFresh;
   const effectivePurchaseReasons = [
@@ -147,55 +117,14 @@ export function StreamPageClient({
   );
 
   useEffect(() => {
-    if (!createdIntent?.intentId) {
-      return;
-    }
-
-    const activeIntentId = createdIntent.intentId;
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    async function poll() {
-      try {
-        const response = await fetch(`/api/intent/status?intentId=${encodeURIComponent(activeIntentId)}`, {
-          method: 'GET',
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          timer = setTimeout(poll, 4000);
-          return;
-        }
-
-        const json = (await response.json()) as IntentStatusPayload;
-        if (cancelled) {
-          return;
-        }
-
-        setIntentStatus(json);
-
-        const shouldContinue =
-          json.status === 'PENDING_PAYMENT' ||
-          json.leaseStatus === 'QUEUED' ||
-          json.leaseStatus === 'ACTIVE';
-
-        if (shouldContinue) {
-          timer = setTimeout(poll, 4000);
-        }
-      } catch {
-        timer = setTimeout(poll, 4000);
-      }
-    }
-
-    void poll();
+    const timer = setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
 
     return () => {
-      cancelled = true;
-      if (timer) {
-        clearTimeout(timer);
-      }
+      clearInterval(timer);
     };
-  }, [createdIntent?.intentId]);
+  }, []);
 
   async function handleVerify() {
     try {
@@ -263,8 +192,6 @@ export function StreamPageClient({
     try {
       setPurchaseState('creating');
       setPurchaseMessage(null);
-      setCreatedIntent(null);
-      setIntentStatus(null);
 
       const response = await fetch('/api/intent/create', {
         method: 'POST',
@@ -278,35 +205,18 @@ export function StreamPageClient({
         }),
       });
 
-      const json = (await response.json()) as CreatedIntent & { error?: string };
+      const json = (await response.json()) as CreateIntentResponse;
       if (!response.ok) {
         throw new Error(json.error || 'Could not create purchase intent.');
       }
 
-      setCreatedIntent(json);
-      setIntentStatus({
-        intentId: json.intentId,
-        status: 'PENDING_PAYMENT',
-        payoutStatus: 'PENDING',
-        leaseStatus: null,
-        leaseEndsAt: null,
-        paidAt: null,
-        forwardTxSignature: null,
-      });
       setPurchaseState('ready');
-      setPurchaseMessage('Send the exact amount to the deposit address below. CAMIKey will auto-confirm it.');
+      setPurchaseMessage('Intent created. Opening the dedicated job page...');
+      router.push(json.jobPath);
     } catch (error) {
       setPurchaseState('error');
       setPurchaseMessage(error instanceof Error ? error.message : 'Could not create purchase intent.');
     }
-  }
-
-  function resetPurchase() {
-    setBuyerMint('');
-    setPurchaseState('idle');
-    setPurchaseMessage(null);
-    setCreatedIntent(null);
-    setIntentStatus(null);
   }
 
   return (
@@ -401,7 +311,8 @@ export function StreamPageClient({
               <h2 style={{ fontSize: '1.6rem', margin: '10px 0 12px' }}>Sponsor this stream&apos;s chart slot.</h2>
               <p className="subtitle">
                 Choose a tier, enter only the buyer token mint, then send the exact SOL amount to the
-                unique deposit address CAMIKey generates for this purchase.
+                unique deposit address CAMIKey generates for this purchase. You will land on a separate
+                job page that keeps watching payment, queue state, and chart activation.
               </p>
             </div>
 
@@ -441,11 +352,6 @@ export function StreamPageClient({
               >
                 {purchaseState === 'creating' ? 'Creating intent...' : 'Create purchase intent'}
               </button>
-              {(createdIntent || intentStatus) ? (
-                <button className="button secondary" onClick={resetPurchase} type="button">
-                  Reset
-                </button>
-              ) : null}
             </div>
 
             {!effectiveCanPurchase ? (
@@ -456,40 +362,6 @@ export function StreamPageClient({
 
             {purchaseMessage ? (
               <div className={`status ${purchaseState === 'error' ? 'error' : 'success'}`}>{purchaseMessage}</div>
-            ) : null}
-
-            {createdIntent ? (
-              <div className="stack">
-                <dl className="detail-list">
-                  <div className="detail">
-                    <dt>Deposit address</dt>
-                    <dd className="mono">{createdIntent.depositAddress}</dd>
-                  </div>
-                  <div className="detail">
-                    <dt>Exact amount</dt>
-                    <dd className="mono">{createdIntent.amountSol} SOL</dd>
-                  </div>
-                  <div className="detail">
-                    <dt>Intent expires in</dt>
-                    <dd>{formatRelativeCountdown(createdIntent.expiresAt)}</dd>
-                  </div>
-                  <div className="detail">
-                    <dt>Display length</dt>
-                    <dd>{createdIntent.displaySeconds} seconds</dd>
-                  </div>
-                </dl>
-
-                {intentStatus ? (
-                  <div className="status info">
-                    Payment status: {intentStatus.status}
-                    {intentStatus.payoutStatus ? ` - Payout: ${intentStatus.payoutStatus}` : ''}
-                    {intentStatus.leaseStatus ? ` - Lease: ${intentStatus.leaseStatus}` : ''}
-                    {intentStatus.leaseEndsAt ? ` - Ends: ${formatTimestamp(intentStatus.leaseEndsAt)}` : ''}
-                    {intentStatus.forwardTxSignature ? ` - Tx: ${intentStatus.forwardTxSignature}` : ''}
-                    {intentStatus.payoutFailureReason ? ` - Retry: ${intentStatus.payoutFailureReason}` : ''}
-                  </div>
-                ) : null}
-              </div>
             ) : null}
           </div>
         </div>
