@@ -45,15 +45,18 @@ interface CreateIntentResponse {
   error?: string;
 }
 
+const TIMESTAMP_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+});
+
 function formatTimestamp(value: string | null): string {
   if (!value) {
     return 'Not yet detected';
   }
 
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
+  return `${TIMESTAMP_FORMATTER.format(new Date(value))} UTC`;
 }
 
 export function StreamPageClient({
