@@ -4,24 +4,6 @@ export function ok<T>(data: T, init?: ResponseInit) {
   return NextResponse.json(data, init);
 }
 
-export function badRequest(message: string, details?: unknown) {
-  return NextResponse.json(
-    {
-      error: message,
-      details: details ?? null,
-    },
-    { status: 400 },
-  );
-}
-
-export function notFound(message: string) {
-  return NextResponse.json({ error: message }, { status: 404 });
-}
-
-export function serverError(message: string) {
-  return NextResponse.json({ error: message }, { status: 500 });
-}
-
-export function unauthorized(message: string) {
-  return NextResponse.json({ error: message }, { status: 401 });
+export function fail(message: string, status = 400, details?: unknown) {
+  return NextResponse.json({ error: message, details: details ?? null }, { status });
 }

@@ -1,0 +1,28 @@
+import 'server-only';
+import { verifyAccessToken } from '@privy-io/node';
+import { headers } from 'next/headers';
+import { getServerEnv, isPrivyEnabled } from '@/lib/env';
+
+export async function requirePrivyUser() {
+  if (!isPrivyEnabled()) {
+    throw new Error('Privy is not configured for this deployment.');
+  }
+
+  const authHeader = (await headers()).get('authorization')?.replace('Bearer ', '');
+  if (!authHeader) {
+    throw new Error('Missing authorization header.');
+  }
+
+  const env = getServerEnv();
+  const verificationKey = env.PRIVY_VERIFICATION_KEY || env.PRIVY_APP_SECRET;
+  if (!env.NEXT_PUBLIC_PRIVY_APP_ID || !verificationKey) {
+    throw new Error('Privy environment variables are incomplete.');
+  }
+
+  const claims = await verifyAccessToken({
+    access_token: authHeader,
+    app_id: env.NEXT_PUBLIC_PRIVY_APP_ID,
+    verification_key: verificationKey,
+  });
+  return claims;
+}

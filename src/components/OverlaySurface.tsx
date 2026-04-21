@@ -1,0 +1,113 @@
+'use client';
+
+import { useEffect, useMemo } from 'react';
+import DexChart from '@/components/DexChart';
+import MediaBanner from '@/components/MediaBanner';
+import OverlayDisclosure from '@/components/OverlayDisclosure';
+import { useDexScreener } from '@/hooks/useDexScreener';
+
+type Platform = 'x' | 'youtube' | 'twitch' | 'pump';
+
+interface OverlaySurfaceProps {
+  platform: Platform;
+  searchParams: URLSearchParams;
+}
+
+function getPositionClass(position: string) {
+  switch (position) {
+    case 'top-left':
+      return 'top-6 left-6';
+    case 'center':
+      return 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+    case 'bottom-right':
+    default:
+      return 'bottom-10 right-6';
+  }
+}
+
+export default function OverlaySurface({ platform, searchParams }: OverlaySurfaceProps) {
+  const token = searchParams.get('token') || '';
+  const chain = searchParams.get('chain') || 'solana';
+  const position = searchParams.get('position') || 'bottom-right';
+  const size = searchParams.get('size') || 'medium';
+  const theme = searchParams.get('theme') || 'dark';
+  const showChart = searchParams.get('showChart') !== 'false';
+  const showMedia = searchParams.get('showMedia') !== 'false';
+  const mediaSrc = searchParams.get('mediaSrc');
+  const mediaType = (searchParams.get('mediaType') as 'image' | 'gif' | 'video' | null) || null;
+  const streamId = searchParams.get('stream');
+
+  const { data, loading } = useDexScreener(token, chain);
+  const chartSize = useMemo(
+    () => (size === 'large' ? { width: 480, height: 260 } : { width: 380, height: 210 }),
+    [size],
+  );
+
+  useEffect(() => {
+    document.documentElement.style.background = 'transparent';
+    document.body.style.background = 'transparent';
+    document.body.style.overflow = 'hidden';
+    document.body.style.margin = '0';
+
+    const heartbeat = streamId
+      ? setInterval(() => {
+          void fetch('/api/streams/heartbeat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ streamId }),
+          });
+        }, 15_000)
+      : null;
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        window.dispatchEvent(new Event('resize'));
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      if (heartbeat) {
+        clearInterval(heartbeat);
+      }
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [streamId]);
+
+  return (
+    <div className="fixed inset-0 overflow-hidden bg-transparent select-none">
+      <div className={`absolute ${getPositionClass(position)} flex max-w-[calc(100vw-3rem)] flex-wrap gap-4`}>
+        {showChart && token ? (
+          <div className="rounded-[24px] border border-white/10 bg-zinc-950/90 p-4 backdrop-blur-xl">
+            <div className="mb-3 flex items-center justify-between gap-4 text-sm">
+              <span className="font-mono text-cyan-400">{token.slice(0, 8)}...</span>
+              <span className="text-emerald-400">
+                {loading ? 'Loading…' : `$${Number(data?.priceUsd || 0).toFixed(6)}`}
+              </span>
+            </div>
+            <DexChart chain={chain} height={chartSize.height} theme={theme === 'light' ? 'light' : 'dark'} tokenAddress={token} width={chartSize.width} />
+            <div className="mt-3 grid grid-cols-3 gap-3 text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+              <Metric label="24H VOL" value={data?.volume?.h24 ? `$${Math.round(data.volume.h24).toLocaleString()}` : '—'} />
+              <Metric label="LIQ" value={data?.liquidity?.usd ? `$${Math.round(data.liquidity.usd).toLocaleString()}` : '—'} />
+              <Metric label="24H" value={typeof data?.priceChange?.h24 === 'number' ? `${data.priceChange.h24.toFixed(2)}%` : '—'} />
+            </div>
+          </div>
+        ) : null}
+
+        {showMedia ? <MediaBanner src={mediaSrc} type={mediaType} /> : null}
+      </div>
+
+      {platform === 'x' ? <OverlayDisclosure /> : <OverlayDisclosure />}
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div>{label}</div>
+      <div className="mt-1 text-sm font-semibold text-white">{value}</div>
+    </div>
+  );
+}

@@ -1,130 +1,115 @@
-export type PricingTier = 'BASE' | 'PRIORITY';
-export type IntentStatus = 'PENDING_PAYMENT' | 'CONFIRMED' | 'EXPIRED';
-export type LeaseStatus = 'QUEUED' | 'ACTIVE' | 'COMPLETED' | 'PREEMPTED';
-export type PayoutStatus = 'PENDING' | 'PROCESSING' | 'FORWARDED' | 'FAILED';
+export type UserRole = 'streamer' | 'sponsor';
+export type AssetKind = 'SOL' | 'USDC';
+export type PaymentStatus = 'pending' | 'submitted' | 'verified' | 'failed';
+export type AdPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'full';
+export type AdSize = 'small' | 'medium' | 'large';
+export type OverlayTheme = 'dark' | 'light';
+export type SupportedChain = 'solana' | 'ethereum' | 'base' | 'bsc' | 'arbitrum' | 'polygon';
 
-export interface EventMetadata {
-  [key: string]: boolean | number | string | null;
+export interface AppUser {
+  id: string;
+  privy_id: string;
+  wallet_address: string | null;
+  role: UserRole;
+  created_at: string;
 }
 
 export interface StreamRecord {
-  streamId: string;
-  slug: string;
-  deployerWallet: string;
-  streamerCoinMint: string;
-  streamerCoinName: string;
-  streamerCoinSymbol: string;
-  defaultDexscreenerUrl: string;
-  createdAt: Date;
-  updatedAt: Date;
-  overlay: {
-    overlayKeyHash: string;
-    stateNonce: number;
-    lastHeartbeatAt: Date | null;
-    lastOverlaySessionId: string | null;
-    verifiedAt: Date | null;
-    lastVerifiedOverlaySessionId: string | null;
-    verifyNonce: string | null;
-    verifyNonceRequestedAt: Date | null;
-    verifyNonceExpiresAt: Date | null;
+  id: string;
+  user_id: string;
+  platform: 'x' | 'youtube' | 'twitch' | 'pump';
+  is_live: boolean;
+  last_heartbeat: string | null;
+  created_at: string;
+}
+
+export interface AdRecord {
+  id: string;
+  stream_id: string;
+  token_address: string;
+  chain: string;
+  position: string;
+  size: string;
+  is_active: boolean;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  ad_id: string;
+  tx_hash: string | null;
+  amount: number;
+  currency: AssetKind;
+  status: string;
+  deposit_address: string | null;
+  deposit_secret: string | null;
+  verified_at: string | null;
+  created_at: string;
+}
+
+export interface MediaJobRecord {
+  id: string;
+  ad_id: string;
+  sponsor_wallet: string | null;
+  media_path: string;
+  media_type: 'image' | 'gif' | 'video' | null;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface DexPair {
+  chainId: string;
+  dexId: string;
+  url: string;
+  pairAddress: string;
+  priceUsd: string | null;
+  priceNative: string | null;
+  fdv?: number | null;
+  marketCap?: number | null;
+  liquidity?: {
+    usd?: number | null;
+    base?: number | null;
+    quote?: number | null;
+  } | null;
+  boosts?: {
+    active?: number | null;
+  } | null;
+  volume?: Record<string, number>;
+  priceChange?: Record<string, number>;
+  baseToken: {
+    address: string;
+    name: string;
+    symbol: string;
   };
-  liveStatus: {
-    isLive: boolean;
-    viewers: number;
-    lastSeenAt: Date | null;
-    lastIndexedAt: Date | null;
-  };
-  kernel: {
-    defaultMint: string;
-    currentMint: string;
-    currentDexscreenerUrl: string;
-    currentLeaseId: string | null;
-    currentLeaseTier: PricingTier | null;
-    currentLeaseStartedAt: Date | null;
-    currentLeaseEndsAt: Date | null;
-    preemptCooldownUntil: Date | null;
-    nextEvaluationAt: Date | null;
+  quoteToken: {
+    address: string;
+    name: string;
+    symbol: string;
   };
 }
 
-export interface PumpCoinMetadata {
-  mint: string;
-  name: string;
-  symbol: string;
-  creator: string;
-  isCurrentlyLive?: boolean;
+export interface DexSearchResult {
+  pair: DexPair;
+  sponsored: boolean;
 }
 
-export interface PumpLiveEntry {
-  mint: string;
-  creatorAddress: string;
-  viewerCount: number;
-  linkUrl: string;
-  symbol: string;
-  title: string;
-  isLive: boolean;
+export interface DexCandle {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 }
 
-export interface LiveIndexRecord {
-  indexedAt: Date;
-  refreshIntervalMs: number;
-  streams: PumpLiveEntry[];
-}
-
-export interface StreamEventRecord {
-  eventId: string;
-  type: string;
-  message: string;
-  createdAt: Date;
-  metadata: EventMetadata | null;
-}
-
-export interface IntentRecord {
-  intentId: string;
-  streamId: string;
-  slug: string;
-  tier: PricingTier;
-  buyerMint: string;
-  sponsoredDexscreenerUrl: string;
-  depositAddress: string;
-  depositSecretCiphertext: string;
-  amountLamports: number;
-  amountSol: number;
-  pricingResolvedAt: string;
-  displaySeconds: number;
-  status: IntentStatus;
-  payoutStatus: PayoutStatus;
-  leaseId: string | null;
-  paymentConfirmedAt: Date | null;
-  paidAt: Date | null;
-  expiresAt: Date;
-  depositObservedLamports: number;
-  depositObservedSignature: string | null;
-  streamerPayoutLamports: number;
-  treasuryPayoutLamports: number;
-  feeLamports: number;
-  forwardTxSignature: string | null;
-  payoutFailureReason: string | null;
-  payoutProcessingAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface LeaseRecord {
-  leaseId: string;
-  streamId: string;
-  intentId: string;
-  tier: PricingTier;
-  buyerMint: string;
-  sponsoredDexscreenerUrl: string;
-  durationSeconds: number;
-  status: LeaseStatus;
-  queuePosition: number;
-  queuedAt: Date;
-  activatedAt: Date | null;
-  completedAt: Date | null;
-  endsAt: Date | null;
-  preemptedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+export interface OverlayAdConfig {
+  token: string;
+  chain: SupportedChain;
+  position: AdPosition;
+  size: AdSize;
+  theme: OverlayTheme;
+  showSponsor: boolean;
+  sponsorLabel?: string | null;
 }
