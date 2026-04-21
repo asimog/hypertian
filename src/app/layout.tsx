@@ -1,6 +1,7 @@
 import '@/app/globals.css';
 import { AppShell } from '@/components/app-shell';
 import { Providers } from '@/components/providers';
+import { SiteBackground } from '@/components/site-background';
 
 export const metadata = {
   title: 'Hypertian',
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Providers>
+          <SiteBackground />
           <AppShell>{children}</AppShell>
         </Providers>
       </body>

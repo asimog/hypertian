@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { authenticated, login, logout, user } = usePrivy();
 
   return (
-    <div className="min-h-screen">
+    <div className="relative z-10 min-h-screen">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
