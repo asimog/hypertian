@@ -26,6 +26,8 @@ export interface StreamRecord {
 export interface AdRecord {
   id: string;
   stream_id: string;
+  sponsor_id?: string | null;
+  sponsor_wallet?: string | null;
   token_address: string;
   chain: string;
   position: string;

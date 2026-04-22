@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { AuthGate } from '@/components/auth-gate';
 import { MetricCard } from '@/components/app-shell';
@@ -142,7 +142,41 @@ function PrivyStreamerDashboard(props: StreamerDashboardProps) {
   const { wallets } = useWallets();
   const [platform, setPlatform] = useState<'x' | 'youtube' | 'twitch' | 'pump'>('x');
   const [creating, setCreating] = useState(false);
+  const [streams, setStreams] = useState(props.initialStreams);
+  const [ads, setAds] = useState(props.initialAds);
+  const [mediaJobs, setMediaJobs] = useState(props.initialMediaJobs);
   const wallet = wallets.find((item) => item.address)?.address || null;
+
+  useEffect(() => {
+    async function loadDashboard() {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        return;
+      }
+
+      const response = await fetch('/api/dashboard/streamer', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const json = (await response.json()) as {
+        streams?: StreamRecord[];
+        ads?: AdRecord[];
+        mediaJobs?: MediaJobRecord[];
+      };
+
+      setStreams(json.streams ?? []);
+      setAds(json.ads ?? []);
+      setMediaJobs(json.mediaJobs ?? []);
+    }
+
+    void loadDashboard();
+  }, [getAccessToken]);
 
   async function createStream() {
     setCreating(true);
@@ -170,7 +204,9 @@ function PrivyStreamerDashboard(props: StreamerDashboardProps) {
   return (
     <AuthGate role="streamer">
       <StreamerDashboardContent
-        {...props}
+        initialAds={ads}
+        initialMediaJobs={mediaJobs}
+        initialStreams={streams}
         canCreate
         creating={creating}
         onCreateStream={createStream}

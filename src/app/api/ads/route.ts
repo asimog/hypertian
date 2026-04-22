@@ -1,7 +1,9 @@
 import { DEFAULT_AD_DURATION_HOURS, DEFAULT_AD_PRICE_SOL } from '@/lib/constants';
 import { getPairsByTokenAddress } from '@/lib/dexscreener';
+import { isPrivyEnabled } from '@/lib/env';
 import { fail, ok } from '@/lib/http';
-import { createAdWithPayment } from '@/lib/supabase/queries';
+import { requirePrivyUser } from '@/lib/privy';
+import { createAdWithPayment, getUserByPrivyId } from '@/lib/supabase/queries';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -15,6 +17,13 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const claims = isPrivyEnabled() ? await requirePrivyUser() : null;
+    const sponsor = claims ? await getUserByPrivyId(claims.user_id) : null;
+
+    if (isPrivyEnabled() && !sponsor) {
+      return fail('User must be synced before creating a campaign.', 403);
+    }
+
     const body = schema.parse(await request.json());
     const pairs = await getPairsByTokenAddress(body.chain, body.tokenAddress);
     const primaryPair = pairs[0];
@@ -27,6 +36,8 @@ export async function POST(request: Request) {
 
     const { ad, payment } = await createAdWithPayment({
       streamId: body.streamId,
+      sponsorId: sponsor?.id ?? null,
+      sponsorWallet: sponsor?.wallet_address ?? null,
       tokenAddress: body.tokenAddress,
       chain: body.chain,
       position: body.position,

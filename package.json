@@ -13,14 +13,16 @@
     "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@farcaster/mini-app-solana": "^2.0.0",
     "@privy-io/node": "^0.15.0",
     "@privy-io/react-auth": "^3.22.1",
-    "@solana/spl-token": "^0.4.13",
-    "@solana/web3.js": "1.98.0",
     "@solana-program/memo": "^0.8.0",
     "@solana-program/system": "^0.8.0",
     "@solana-program/token": "^0.6.0",
     "@solana/kit": "^3.0.3",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@solana/web3.js": "1.98.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.57.4",
     "clsx": "^2.1.1",

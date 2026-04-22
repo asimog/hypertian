@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePrivy } from '@privy-io/react-auth';
 import { Activity, RadioTower, TvMinimalPlay, Wallet } from 'lucide-react';
+import { isPrivyEnabled } from '@/lib/env';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Overview' },
@@ -13,7 +14,7 @@ const NAV_ITEMS = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { authenticated, login, logout, user } = usePrivy();
+  const privyEnabled = isPrivyEnabled();
 
   return (
     <div className="relative z-10 min-h-screen">
@@ -41,34 +42,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
-            {authenticated ? (
-              <>
-                <div className="rounded-full border border-white/10 px-4 py-2 text-xs text-slate-300">
-                  {user?.email?.address || user?.twitter?.username || 'Wallet connected'}
-                </div>
-                <button
-                  className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950"
-                  onClick={() => logout()}
-                  type="button"
-                >
-                  Disconnect
-                </button>
-              </>
-            ) : (
-              <button
-                className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950"
-                onClick={login}
-                type="button"
-              >
-                Connect
-              </button>
-            )}
-          </div>
+          <div className="flex items-center gap-2">{privyEnabled ? <PrivyAuthControls /> : null}</div>
         </div>
       </header>
       <main className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8">{children}</main>
     </div>
+  );
+}
+
+function PrivyAuthControls() {
+  const { authenticated, login, logout, user } = usePrivy();
+
+  if (authenticated) {
+    return (
+      <>
+        <div className="rounded-full border border-white/10 px-4 py-2 text-xs text-slate-300">
+          {user?.email?.address || user?.twitter?.username || 'Wallet connected'}
+        </div>
+        <button
+          className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950"
+          onClick={() => logout()}
+          type="button"
+        >
+          Disconnect
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <button
+      className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950"
+      onClick={login}
+      type="button"
+    >
+      Connect
+    </button>
   );
 }
 

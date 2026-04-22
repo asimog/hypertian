@@ -103,6 +103,8 @@ export async function listAdsForSponsor(walletAddress: string) {
 
 export async function createAdWithPayment(input: {
   streamId: string;
+  sponsorId?: string | null;
+  sponsorWallet?: string | null;
   tokenAddress: string;
   chain: string;
   position: string;
@@ -117,6 +119,8 @@ export async function createAdWithPayment(input: {
     .from('ads')
     .insert({
       stream_id: input.streamId,
+      sponsor_id: input.sponsorId ?? null,
+      sponsor_wallet: input.sponsorWallet ?? null,
       token_address: input.tokenAddress,
       chain: input.chain,
       position: input.position,

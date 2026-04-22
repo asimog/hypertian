@@ -45,6 +45,9 @@ export function SiteBackground() {
       return;
     }
 
+    const canvasEl = canvas;
+    const ctx = context;
+
     let animationFrame = 0;
     let width = 0;
     let height = 0;
@@ -67,11 +70,11 @@ export function SiteBackground() {
       width = window.innerWidth;
       height = window.innerHeight;
       const ratio = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(width * ratio);
-      canvas.height = Math.floor(height * ratio);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      canvasEl.width = Math.floor(width * ratio);
+      canvasEl.height = Math.floor(height * ratio);
+      canvasEl.style.width = `${width}px`;
+      canvasEl.style.height = `${height}px`;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       pointerX = width * 0.5;
       pointerY = height * 0.45;
     }
@@ -98,16 +101,16 @@ export function SiteBackground() {
       const driftX = Math.sin(time * 0.00014) * width * 0.03;
       const driftY = Math.cos(time * 0.00012) * height * 0.04;
 
-      context.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
 
-      const base = context.createLinearGradient(0, 0, 0, height);
+      const base = ctx.createLinearGradient(0, 0, 0, height);
       base.addColorStop(0, '#020407');
       base.addColorStop(0.45, '#03070d');
       base.addColorStop(1, '#02050a');
-      context.fillStyle = base;
-      context.fillRect(0, 0, width, height);
+      ctx.fillStyle = base;
+      ctx.fillRect(0, 0, width, height);
 
-      const tealBloom = context.createRadialGradient(
+      const tealBloom = ctx.createRadialGradient(
         width * 0.5 + driftX * 0.7,
         height * 0.38 + driftY * 0.5,
         0,
@@ -118,10 +121,10 @@ export function SiteBackground() {
       tealBloom.addColorStop(0, 'rgba(73, 197, 182, 0.18)');
       tealBloom.addColorStop(0.35, 'rgba(39, 121, 167, 0.12)');
       tealBloom.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      context.fillStyle = tealBloom;
-      context.fillRect(0, 0, width, height);
+      ctx.fillStyle = tealBloom;
+      ctx.fillRect(0, 0, width, height);
 
-      const sideBloom = context.createRadialGradient(
+      const sideBloom = ctx.createRadialGradient(
         width * 0.78 - driftX,
         height * 0.22,
         0,
@@ -132,11 +135,11 @@ export function SiteBackground() {
       sideBloom.addColorStop(0, 'rgba(118, 167, 255, 0.14)');
       sideBloom.addColorStop(0.45, 'rgba(39, 121, 167, 0.08)');
       sideBloom.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      context.fillStyle = sideBloom;
-      context.fillRect(0, 0, width, height);
+      ctx.fillStyle = sideBloom;
+      ctx.fillRect(0, 0, width, height);
 
       const orbRadius = 72 + Math.sin(time * 0.0013) * 6;
-      const orb = context.createRadialGradient(
+      const orb = ctx.createRadialGradient(
         width * 0.5,
         height * 0.44,
         0,
@@ -147,18 +150,18 @@ export function SiteBackground() {
       orb.addColorStop(0, 'rgba(73, 197, 182, 0.12)');
       orb.addColorStop(0.4, 'rgba(39, 121, 167, 0.09)');
       orb.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      context.fillStyle = orb;
-      context.beginPath();
-      context.arc(width * 0.5, height * 0.44, orbRadius * 3.4, 0, Math.PI * 2);
-      context.fill();
+      ctx.fillStyle = orb;
+      ctx.beginPath();
+      ctx.arc(width * 0.5, height * 0.44, orbRadius * 3.4, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     function drawParticles(time: number) {
       const centerX = width * 0.5;
       const centerY = height * 0.44;
 
-      context.save();
-      context.globalCompositeOperation = 'screen';
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
 
       for (let index = particles.length - 1; index >= 0; index -= 1) {
         const particle = particles[index];
@@ -209,18 +212,18 @@ export function SiteBackground() {
         const radius = particle.size * (0.65 + lifeRatio * 0.55);
         const alpha = particle.alpha * lifeRatio;
 
-        context.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
-        context.beginPath();
-        context.arc(particle.x, particle.y, radius, 0, Math.PI * 2);
-        context.fill();
+        ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, radius, 0, Math.PI * 2);
+        ctx.fill();
 
-        const glow = context.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, radius * 6);
+        const glow = ctx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, radius * 6);
         glow.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.45})`);
         glow.addColorStop(1, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0)`);
-        context.fillStyle = glow;
-        context.beginPath();
-        context.arc(particle.x, particle.y, radius * 6, 0, Math.PI * 2);
-        context.fill();
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, radius * 6, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       for (let i = 0; i < particles.length; i += 12) {
@@ -234,16 +237,16 @@ export function SiteBackground() {
             continue;
           }
 
-          context.strokeStyle = `rgba(73, 197, 182, ${(1 - distance / 90) * 0.08})`;
-          context.lineWidth = 0.6;
-          context.beginPath();
-          context.moveTo(a.x, a.y);
-          context.lineTo(b.x, b.y);
-          context.stroke();
+          ctx.strokeStyle = `rgba(73, 197, 182, ${(1 - distance / 90) * 0.08})`;
+          ctx.lineWidth = 0.6;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
         }
       }
 
-      context.restore();
+      ctx.restore();
     }
 
     function drawGrain(time: number) {
@@ -252,15 +255,15 @@ export function SiteBackground() {
         return;
       }
 
-      context.save();
-      context.globalAlpha = 0.055;
+      ctx.save();
+      ctx.globalAlpha = 0.055;
       for (let i = 0; i < 70; i += 1) {
         const x = (Math.sin(time * 0.0002 + i * 12.91) * 0.5 + 0.5) * width;
         const y = (Math.cos(time * 0.00016 + i * 7.37) * 0.5 + 0.5) * height;
-        context.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.16)' : 'rgba(73,197,182,0.14)';
-        context.fillRect(x, y, 1.2, 1.2);
+        ctx.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.16)' : 'rgba(73,197,182,0.14)';
+        ctx.fillRect(x, y, 1.2, 1.2);
       }
-      context.restore();
+      ctx.restore();
     }
 
     function onPointerMove(event: MouseEvent) {

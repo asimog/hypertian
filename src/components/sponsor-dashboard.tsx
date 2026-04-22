@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
+import { AuthGate } from '@/components/auth-gate';
 import { MetricCard } from '@/components/app-shell';
 import { DEFAULT_AD_PRICE_SOL } from '@/lib/constants';
+import { isPrivyEnabled } from '@/lib/env';
 import { AdRecord, StreamRecord } from '@/lib/types';
 
 interface PendingPayment {
@@ -19,7 +22,74 @@ export function SponsorDashboard({
   streams: StreamRecord[];
   ads: AdRecord[];
 }) {
-  const [selectedStreamId, setSelectedStreamId] = useState(streams[0]?.id || '');
+  if (isPrivyEnabled()) {
+    return <PrivySponsorDashboard ads={ads} streams={streams} />;
+  }
+
+  return <SponsorDashboardContent initialAds={ads} initialStreams={streams} />;
+}
+
+function PrivySponsorDashboard({
+  streams,
+  ads,
+}: {
+  streams: StreamRecord[];
+  ads: AdRecord[];
+}) {
+  const { getAccessToken } = usePrivy();
+  const [dashboardStreams, setDashboardStreams] = useState(streams);
+  const [dashboardAds, setDashboardAds] = useState(ads);
+
+  useEffect(() => {
+    async function loadDashboard() {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        return;
+      }
+
+      const response = await fetch('/api/dashboard/sponsor', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const json = (await response.json()) as {
+        streams?: StreamRecord[];
+        ads?: AdRecord[];
+      };
+
+      setDashboardStreams(json.streams ?? []);
+      setDashboardAds(json.ads ?? []);
+    }
+
+    void loadDashboard();
+  }, [getAccessToken]);
+
+  return (
+    <AuthGate role="sponsor">
+      <SponsorDashboardContent
+        getAccessToken={getAccessToken}
+        initialAds={dashboardAds}
+        initialStreams={dashboardStreams}
+      />
+    </AuthGate>
+  );
+}
+
+function SponsorDashboardContent({
+  getAccessToken,
+  initialStreams,
+  initialAds,
+}: {
+  getAccessToken?: () => Promise<string | null>;
+  initialStreams: StreamRecord[];
+  initialAds: AdRecord[];
+}) {
+  const [selectedStreamId, setSelectedStreamId] = useState(initialStreams[0]?.id || '');
   const [tokenAddress, setTokenAddress] = useState('');
   const [chain, setChain] = useState<'solana' | 'base' | 'ethereum'>('solana');
   const [position, setPosition] = useState<'bottom-right' | 'top-left' | 'full'>('bottom-right');
@@ -30,6 +100,10 @@ export function SponsorDashboard({
   const [createdPayment, setCreatedPayment] = useState<PendingPayment | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    setSelectedStreamId((current) => current || initialStreams[0]?.id || '');
+  }, [initialStreams]);
+
   async function submitCampaign() {
     setSubmitting(true);
     setErrorMessage(null);
@@ -37,9 +111,11 @@ export function SponsorDashboard({
     setAmountReceived(null);
 
     try {
+      const accessToken = await getAccessToken?.();
       const response = await fetch('/api/ads', {
         method: 'POST',
         headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -112,9 +188,9 @@ export function SponsorDashboard({
   return (
     <div className="grid gap-6">
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon="stream" label="Streams" value={String(streams.length)} hint="Choose the livestream feed where your chart ad should appear." />
-        <MetricCard icon="activity" label="Campaigns" value={String(ads.length)} hint="Ads activate automatically after the Solana deposit lands." />
-        <MetricCard icon="wallet" label="Pricing" value={`${DEFAULT_AD_PRICE_SOL} SOL`} hint="One generated address per ad slot. No Privy login required." />
+        <MetricCard icon="stream" label="Streams" value={String(initialStreams.length)} hint="Choose the livestream feed where your chart ad should appear." />
+        <MetricCard icon="activity" label="Campaigns" value={String(initialAds.length)} hint="Ads activate automatically after the Solana deposit lands." />
+        <MetricCard icon="wallet" label="Pricing" value={`${DEFAULT_AD_PRICE_SOL} SOL`} hint={isPrivyEnabled() ? 'Authenticated sponsors get one generated address per ad slot.' : 'One generated address per ad slot.'} />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -122,7 +198,7 @@ export function SponsorDashboard({
           <div className="text-xs uppercase tracking-[0.3em] text-emerald-300">Launch a sponsor slot</div>
           <div className="mt-6 grid gap-4">
             <select className="rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white" onChange={(event) => setSelectedStreamId(event.target.value)} value={selectedStreamId}>
-              {streams.map((stream) => (
+              {initialStreams.map((stream) => (
                 <option key={stream.id} value={stream.id}>
                   {stream.platform.toUpperCase()} · {stream.id.slice(0, 8)}
                 </option>
@@ -182,7 +258,7 @@ export function SponsorDashboard({
         <div className="rounded-[32px] border border-white/10 bg-slate-950/70 p-6">
           <div className="text-xs uppercase tracking-[0.3em] text-cyan-300">Recent campaigns</div>
           <div className="mt-4 grid gap-4">
-            {ads.map((ad) => (
+            {initialAds.map((ad) => (
               <article className="rounded-3xl border border-white/10 bg-white/5 p-5" key={ad.id}>
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
@@ -197,7 +273,7 @@ export function SponsorDashboard({
                 </div>
               </article>
             ))}
-            {!ads.length ? <p className="text-sm text-slate-400">No campaigns yet. Choose a stream and token to launch your first billboard.</p> : null}
+            {!initialAds.length ? <p className="text-sm text-slate-400">No campaigns yet. Choose a stream and token to launch your first billboard.</p> : null}
           </div>
         </div>
       </section>

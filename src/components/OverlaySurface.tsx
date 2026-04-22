@@ -17,9 +17,16 @@ function getPositionClass(position: string) {
   switch (position) {
     case 'top-left':
       return 'top-6 left-6';
+    case 'top-right':
+      return 'top-6 right-6';
     case 'center':
       return 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+    case 'bottom-left':
+      return 'bottom-10 left-6';
     case 'bottom-right':
+      return 'bottom-10 right-6';
+    case 'full':
+      return 'inset-0 w-full h-full justify-center items-center';
     default:
       return 'bottom-10 right-6';
   }

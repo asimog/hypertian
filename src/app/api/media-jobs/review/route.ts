@@ -1,6 +1,8 @@
 import { fail, ok } from '@/lib/http';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { z } from 'zod';
+import { requirePrivyUser } from '@/lib/privy';
+import { getUserByPrivyId } from '@/lib/supabase/queries';
 
 const schema = z.object({
   mediaJobId: z.string().uuid().or(z.string().min(1)),
@@ -9,16 +11,27 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const claims = await requirePrivyUser();
+    const user = await getUserByPrivyId(claims.user_id);
+
+    if (!user) {
+      return fail('User must be synced before reviewing media.', 403);
+    }
+
     const body = schema.parse(await request.json());
     const supabase = createAdminClient();
     const { data: mediaJob, error: fetchError } = await supabase
       .from('media_jobs')
-      .select('*')
+      .select('*, ads!inner(stream_id, streams!inner(user_id))')
       .eq('id', body.mediaJobId)
       .single();
 
     if (fetchError) {
       throw fetchError;
+    }
+
+    if (mediaJob.ads?.streams?.user_id !== user.id) {
+      return fail('You are not authorized to review this media job.', 403);
     }
 
     if (body.decision === 'approved' && typeof mediaJob.media_path === 'string' && mediaJob.media_path.startsWith('pending/')) {
