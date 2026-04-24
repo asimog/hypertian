@@ -100,11 +100,11 @@ The app is already beyond the migration phase: it has active routes, API handler
 4. The dashboard polls `POST /api/payments/verify`.
 5. Once the required SOL amount lands, the payment is marked verified and the ad is activated.
 
-### Media workflow
+### Banner URL workflow
 
-1. Sponsor media uploads go to the `ad-media` bucket under `pending/`.
-2. Each upload creates a `media_jobs` row with `pending` status.
-3. Review actions move approved files into `approved/` and mark the job as reviewed.
+1. Advertisers can provide an existing HTTPS banner URL or upload a small image to Filebase.
+2. Filebase uploads use a short-lived S3 presigned URL and return only the public object URL.
+3. The app stores the URL only. Streamer approval is required before a paid banner renders in the overlay.
 
 ## Environment Variables
 
@@ -112,29 +112,37 @@ The app is already beyond the migration phase: it has active routes, API handler
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+# or legacy fallback:
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-HELIUS_RPC_URL=
+NEXT_PUBLIC_PRIVY_APP_ID=
+PRIVY_APP_SECRET=
+NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA=
 ```
 
 ### Optional
 
 ```bash
-NEXT_PUBLIC_PRIVY_APP_ID=
-PRIVY_APP_SECRET=
 PRIVY_VERIFICATION_KEY=
+HELIUS_RPC_URL=
 NEXT_PUBLIC_SOLANA_RPC_URL=
-NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA=
 CRON_SECRET=
 DEXSCREENER_WS_URL=
+FILEBASE_ACCESS_KEY_ID=
+FILEBASE_SECRET_ACCESS_KEY=
+FILEBASE_BUCKET=
+NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL=
 ```
 
 Notes:
 
-- Privy is optional for booting the app, but streamer-side creation/sync flows depend on it.
-- `HELIUS_RPC_URL` is the preferred Solana RPC for payment verification on Vercel.
-- `NEXT_PUBLIC_SOLANA_RPC_URL` remains available as a fallback if `HELIUS_RPC_URL` is omitted.
-- Generated deposit-address verification currently supports `SOL` payments only.
+- Privy is required for streamer login and stream registration. Advertiser checkout and the public directory do not require login.
+- `PRIVY_VERIFICATION_KEY` is preferred for backend token verification when available; `PRIVY_APP_SECRET` is retained as a fallback.
+- `HELIUS_RPC_URL` is the preferred server-side Solana RPC for payment verification. If omitted, payment verification falls back to `NEXT_PUBLIC_SOLANA_RPC_URL`, then Solana public mainnet RPC.
+- `NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA` is required for PumpFun's 10% commission route.
+- Filebase env vars are only required when the upload option is enabled. Direct advertiser-provided HTTPS URLs work without Filebase.
+- `NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL` should match your public bucket URL, for example `https://<bucket>.s3.filebase.com`.
 
 ## Local Setup
 
@@ -260,16 +268,13 @@ The app is Vercel-friendly and uses the App Router deployment model. Before depl
 
 - set all required env vars
 - apply both Supabase migrations
-- create the `ad-media` storage bucket
-- add `HELIUS_RPC_URL` so payment verification uses your Helius-backed Solana RPC
+- configure the Filebase bucket if you want upload-backed banner URLs
+- add `HELIUS_RPC_URL` so payment verification uses your Helius-backed Solana RPC in production
 
 ### Vercel notes
 
 - This repo is configured for Vercel with [vercel.json](./vercel.json).
-- Sponsor media uploads should use signed Supabase upload URLs through:
-  - `POST /api/media-jobs/upload` to create a signed upload token
-  - direct browser upload to Supabase Storage
-  - `POST /api/media-jobs/complete` to create the `media_jobs` row after upload
+- Sponsor banner uploads use signed Filebase S3 upload URLs through `POST /api/filebase/upload-url`, followed by direct browser upload to Filebase.
 - This avoids Vercel Function request-body limits on large multipart uploads.
 - `GET /api/cron/payments` is available for optional Vercel Cron usage with `CRON_SECRET`. This is useful on paid plans when you want server-side payment reconciliation in addition to client polling.
 - verify your Solana RPC endpoint is reachable in the deployment environment

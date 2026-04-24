@@ -1,7 +1,7 @@
 import 'server-only';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { getServerEnv } from '@/lib/env';
+import { getFilebaseEnv } from '@/lib/env';
 import { assertValidFilebaseUpload, getFilebasePublicUrl } from '@/lib/filebase-shared';
 
 export const FILEBASE_ENDPOINT = 'https://s3.filebase.com';
@@ -12,11 +12,7 @@ export async function createFilebasePresignedUpload(input: {
   contentType: string;
   fileSize: number;
 }) {
-  const env = getServerEnv();
-  if (!env.FILEBASE_ACCESS_KEY_ID || !env.FILEBASE_SECRET_ACCESS_KEY || !env.FILEBASE_BUCKET) {
-    throw new Error('Filebase is not configured.');
-  }
-
+  const env = getFilebaseEnv();
   const fileName = assertValidFilebaseUpload(input);
   const key = `banners/${new Date().toISOString().slice(0, 10)}/${fileName}`;
   const client = new S3Client({

@@ -24,6 +24,13 @@ const serverEnvSchema = publicEnvSchema.extend({
   FILEBASE_BUCKET: z.string().min(1).optional(),
 });
 
+const filebaseEnvSchema = z.object({
+  FILEBASE_ACCESS_KEY_ID: z.string().min(1),
+  FILEBASE_SECRET_ACCESS_KEY: z.string().min(1),
+  FILEBASE_BUCKET: z.string().min(1),
+  NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: z.string().url().optional(),
+});
+
 export function getPublicEnv() {
   return publicEnvSchema.parse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -59,8 +66,7 @@ export function getServerEnv() {
 }
 
 export function getSolanaRpcUrl() {
-  const env = getServerEnv();
-  return env.HELIUS_RPC_URL || env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+  return process.env.HELIUS_RPC_URL || process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 }
 
 export function getSiteUrl() {
@@ -94,4 +100,13 @@ export function isSupabaseAdminEnabled() {
 
 export function isFilebaseEnabled() {
   return Boolean(process.env.FILEBASE_ACCESS_KEY_ID && process.env.FILEBASE_SECRET_ACCESS_KEY && process.env.FILEBASE_BUCKET);
+}
+
+export function getFilebaseEnv() {
+  return filebaseEnvSchema.parse({
+    FILEBASE_ACCESS_KEY_ID: process.env.FILEBASE_ACCESS_KEY_ID,
+    FILEBASE_SECRET_ACCESS_KEY: process.env.FILEBASE_SECRET_ACCESS_KEY,
+    FILEBASE_BUCKET: process.env.FILEBASE_BUCKET,
+    NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL,
+  });
 }
