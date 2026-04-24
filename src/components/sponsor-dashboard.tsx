@@ -45,6 +45,7 @@ function SponsorDashboardContent({
   const [tokenAddress, setTokenAddress] = useState('');
   const [chain, setChain] = useState<'solana' | 'base' | 'ethereum' | 'bsc' | 'arbitrum' | 'polygon'>('solana');
   const [bannerUrl, setBannerUrl] = useState('');
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [position, setPosition] = useState<'bottom-right' | 'top-left' | 'top-right' | 'bottom-left' | 'full'>('bottom-right');
   const [size, setSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [advertiserContact, setAdvertiserContact] = useState('');
@@ -52,6 +53,7 @@ function SponsorDashboardContent({
   const [createdPayment, setCreatedPayment] = useState<PendingPayment | null>(null);
   const [paymentState, setPaymentState] = useState<'idle' | 'pending' | 'verified'>('idle');
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -108,6 +110,48 @@ function SponsorDashboardContent({
       setErrorMessage(error instanceof Error ? error.message : 'Failed to create ad checkout.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function uploadBanner() {
+    if (!bannerFile) {
+      return;
+    }
+
+    setUploadingBanner(true);
+    setErrorMessage(null);
+    try {
+      const response = await fetch('/api/filebase/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: bannerFile.name,
+          contentType: bannerFile.type,
+          fileSize: bannerFile.size,
+        }),
+      });
+      const json = (await response.json()) as { uploadUrl?: string; publicUrl?: string; error?: string };
+      if (!response.ok || !json.uploadUrl || !json.publicUrl) {
+        throw new Error(json.error || 'Failed to prepare Filebase upload.');
+      }
+
+      const uploadResponse = await fetch(json.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': bannerFile.type,
+        },
+        body: bannerFile,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Filebase upload failed.');
+      }
+
+      setBannerUrl(json.publicUrl);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to upload banner.');
+    } finally {
+      setUploadingBanner(false);
     }
   }
 
@@ -191,10 +235,27 @@ function SponsorDashboardContent({
                 </label>
               </>
             ) : (
-              <label className="grid gap-2 text-sm font-medium text-white" htmlFor="banner-url">
-                Banner URL
-                <input id="banner-url" className={fieldClassName} onChange={(event) => setBannerUrl(event.target.value)} placeholder="https://example.com/banner.png" value={bannerUrl} />
-              </label>
+              <div className="grid gap-4">
+                <label className="grid gap-2 text-sm font-medium text-white" htmlFor="banner-url">
+                  Banner URL
+                  <input id="banner-url" className={fieldClassName} onChange={(event) => setBannerUrl(event.target.value)} placeholder="https://example.com/banner.png" value={bannerUrl} />
+                </label>
+                <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <label className="grid gap-2 text-sm font-medium text-white" htmlFor="banner-file">
+                    Upload banner
+                    <input
+                      id="banner-file"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
+                      className={fieldClassName}
+                      onChange={(event) => setBannerFile(event.target.files?.[0] ?? null)}
+                      type="file"
+                    />
+                  </label>
+                  <button className="secondary-button disabled:opacity-60" disabled={!bannerFile || uploadingBanner} onClick={uploadBanner} type="button">
+                    {uploadingBanner ? 'Uploading...' : 'Upload to Filebase'}
+                  </button>
+                </div>
+              </div>
             )}
             <div className="grid gap-4 md:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-white" htmlFor="placement-position">

@@ -8,6 +8,7 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_SOLANA_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA: z.string().min(32).optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: z.string().url().optional(),
 });
 
 const serverEnvSchema = publicEnvSchema.extend({
@@ -18,6 +19,9 @@ const serverEnvSchema = publicEnvSchema.extend({
   DEXSCREENER_WS_URL: z.string().url().optional(),
   HELIUS_RPC_URL: z.string().url().optional(),
   CRON_SECRET: z.string().min(1).optional(),
+  FILEBASE_ACCESS_KEY_ID: z.string().min(1).optional(),
+  FILEBASE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  FILEBASE_BUCKET: z.string().min(1).optional(),
 });
 
 export function getPublicEnv() {
@@ -29,6 +33,7 @@ export function getPublicEnv() {
     NEXT_PUBLIC_SOLANA_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_RPC_URL,
     NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA: process.env.NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL,
   });
 }
 
@@ -47,6 +52,9 @@ export function getServerEnv() {
     DEXSCREENER_WS_URL: process.env.DEXSCREENER_WS_URL,
     HELIUS_RPC_URL: process.env.HELIUS_RPC_URL,
     CRON_SECRET: process.env.CRON_SECRET,
+    FILEBASE_ACCESS_KEY_ID: process.env.FILEBASE_ACCESS_KEY_ID,
+    FILEBASE_SECRET_ACCESS_KEY: process.env.FILEBASE_SECRET_ACCESS_KEY,
+    FILEBASE_BUCKET: process.env.FILEBASE_BUCKET,
   });
 }
 
@@ -82,4 +90,8 @@ export function isSupabaseAdminEnabled() {
       process.env.SUPABASE_SERVICE_ROLE_KEY &&
       (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
   );
+}
+
+export function isFilebaseEnabled() {
+  return Boolean(process.env.FILEBASE_ACCESS_KEY_ID && process.env.FILEBASE_SECRET_ACCESS_KEY && process.env.FILEBASE_BUCKET);
 }
