@@ -18,9 +18,9 @@ function PrivyAuthGate({
 
   if (!ready) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-slate-300">
-        <LoaderCircle className="mr-3 h-5 w-5 animate-spin" />
-        Checking wallet session...
+      <div className="panel mx-auto flex min-h-[40vh] max-w-2xl items-center justify-center rounded-[32px] p-8 text-[var(--color-copy-soft)] shadow-[0_28px_80px_rgba(6,16,19,0.5)]">
+        <LoaderCircle className="mr-3 h-5 w-5 animate-spin text-[var(--color-accent)]" />
+        Checking your account session...
       </div>
     );
   }
@@ -31,9 +31,9 @@ function PrivyAuthGate({
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
           <LockKeyhole className="h-7 w-7 text-[var(--color-accent)]" />
         </div>
-        <h2 className="text-2xl font-semibold text-white">{role === 'streamer' ? 'Creator' : 'Buyer'} login required</h2>
+        <h2 className="text-2xl font-semibold text-white">{role === 'streamer' ? 'Creator' : 'Sponsor'} login required</h2>
         <p className="mt-3 text-sm leading-6 text-[var(--color-copy-soft)]">
-          Privy keeps Hypertian accounts secure and syncs approved creator or buyer profiles.
+          Privy keeps Hypertian accounts secure and syncs your profile before you create streams or review campaign approvals.
         </p>
         <button
           className="primary-button mt-6"

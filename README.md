@@ -1,132 +1,106 @@
 # Hypertian
 
-## Legal Disclaimer
-Hypertian is a self-hosted tool for personal livestream overlays.
-You are responsible for complying with platform rules, paid partnership policies, and applicable law.
+## What This Repo Is
 
-Always enable native sponsorship disclosure where required.
-Use at your own risk.
+Hypertian is a Next.js 15 App Router app for crypto-native livestream ad inventory.
 
-Not affiliated with X, YouTube, Twitch, Pump.fun, DexScreener, Privy, Supabase, or Vercel.
-No warranty.
+The current codebase supports two active lanes:
 
-## Overview
+- `X Ads`: a tightly controlled overlay lane for a single X account
+- `PumpAds`: a broader creator/sponsor workflow for Pump streamers
 
-Hypertian is a Next.js App Router project for running a self-hosted crypto advertising lane on top of livestream overlays. The current repo combines:
+At a high level, the app does four things:
 
-- creator-facing overlay routes for X, YouTube, Twitch, and Pump.fun
-- a streamer dashboard for generating stream records and OBS-ready URLs
-- a sponsor dashboard for creating chart ad slots and funding them with on-chain SOL deposits
-- Supabase-backed records for users, streams, ads, media jobs, and payments
-- optional Privy auth for streamer-side identity and stream creation
-- DexScreener-backed token search, pair lookup, and live chart rendering
+- lets Privy-authenticated creators register streams and payout wallets
+- lets sponsors create chart or banner ad campaigns for a stream
+- verifies SOL payments on Solana before activating campaigns
+- renders live overlays with DexScreener token context plus approved ad content
 
-The app is already beyond the migration phase: it has active routes, API handlers, Supabase migrations, and Vitest coverage for core parsing/data helpers.
+## Codebase Snapshot
 
-## Stack
+The repo is already past prototype stage. The core runtime is present and wired:
 
-- Next.js 15 App Router
-- React 18
-- TypeScript
-- Tailwind CSS 4
-- Supabase Postgres + Storage
-- Privy for optional auth and embedded wallets
-- Solana Web3.js for deposit-address generation and payment verification
-- DexScreener REST data plus live chart polling/websocket helpers
-- Vitest
+- Next.js pages and App Router API handlers in `src/app`
+- Supabase-backed persistence via `src/lib/supabase/*`
+- Privy-backed auth gates in `src/components/providers.tsx` and `src/lib/privy.ts`
+- Solana payment routing and verification in `src/lib/payment-routing.ts`, `src/lib/payments.ts`, and `src/lib/solana.ts`
+- DexScreener search and pair lookups in `src/lib/dexscreener.ts`
 
-## Current Product Surface
+A few important realities from the current code:
 
-### Public routes
+- the README that shipped with the repo was stale
+- `youtube` and `twitch` still appear in some types and old text, but there are no live `/youtube-overlay` or `/twitch-overlay` routes in `src/app`
+- `DEXSCREENER_WS_URL` exists in env parsing, but the current client hook opens a hard-coded DexScreener WebSocket URL and does not read that env var
+- media upload review endpoints currently return `410` and the active banner flow expects an HTTPS banner URL instead
+
+## Current Routes
+
+### App routes
 
 - `/`
-  Landing page and lane entrypoint.
+- `/streams`
 - `/x-overlay`
-  Highest-priority overlay surface for X livestream workflows.
-- `/youtube-overlay`
-  YouTube-flavored overlay route using the shared overlay engine.
-- `/twitch-overlay`
-  Twitch-flavored overlay route using the shared overlay engine.
-- `/pump-overlay`
-  Pump.fun-flavored overlay route using the shared overlay engine.
 - `/pump`
-  Pump lane landing page.
-
-### Dashboard routes
-
+- `/pump-overlay`
+- `/overlay/[streamId]`
 - `/dashboard/streamer`
-  Stream management, OBS URL generation, and pending media job review surface.
 - `/dashboard/sponsor`
-  Sponsor campaign creation, generated deposit address display, and payment polling.
 
 ### API routes
 
-- `POST /api/auth/sync`
-  Upserts a Privy-authenticated user into Supabase.
-- `POST /api/streams`
-  Creates a stream record for `x`, `youtube`, `twitch`, or `pump`.
+- `GET/POST /api/streams`
 - `POST /api/streams/heartbeat`
-  Marks a stream as live and refreshes `last_heartbeat`.
-- `POST /api/ads`
-  Validates a token against DexScreener, creates an ad, and creates a pending SOL payment.
+- `GET/POST /api/ads`
+- `POST /api/ads/review`
 - `POST /api/payments/verify`
-  Checks whether a generated Solana deposit address has received the required payment and activates the ad on success.
-- `POST /api/media-jobs/upload`
-  Uploads sponsor media into Supabase Storage and creates a pending media job.
-- `POST /api/media-jobs/review`
-  Approves or rejects a media job and moves approved assets from `pending/` to `approved/`.
+- `POST /api/auth/sync`
+- `GET /api/dashboard/streamer`
+- `GET /api/dashboard/sponsor`
 - `GET /api/dex/search`
-  DexScreener search proxy.
 - `GET /api/dex/pair`
-  DexScreener pair lookup proxy by pair address or token address.
+- `GET /api/cron/payments`
+- `POST /api/filebase/upload-url`
 
-## Runtime Model
+Disabled at the moment:
 
-### Streamer flow
+- `POST /api/media-jobs/upload`
+- `POST /api/media-jobs/complete`
+- `POST /api/media-jobs/review`
 
-1. A Privy-authenticated streamer syncs identity through `/api/auth/sync`.
-2. The streamer creates a stream record from `/dashboard/streamer`.
-3. Hypertian generates an overlay URL for OBS Browser Source usage.
-4. The overlay page sends a heartbeat every 15 seconds when a `stream` query param is present.
-5. Active ads for that stream are expected to render through the shared overlay surface.
+## Stack
 
-### Sponsor flow
+- Next.js 15
+- React 18
+- TypeScript
+- Tailwind CSS 4
+- Supabase
+- Privy
+- Solana Web3.js
+- DexScreener
+- Vitest
 
-1. A sponsor opens `/dashboard/sponsor`.
-2. They choose a stream, token address, chain, position, and size.
-3. `POST /api/ads` confirms a DexScreener pair exists and creates:
-   - an `ads` record with an expiration window
-   - a `payments` record with a generated Solana deposit address
-4. The dashboard polls `POST /api/payments/verify`.
-5. Once the required SOL amount lands, the payment is marked verified and the ad is activated.
+## Required Environment Variables
 
-### Banner URL workflow
-
-1. Advertisers can provide an existing HTTPS banner URL or upload a small image to Filebase.
-2. Filebase uploads use a short-lived S3 presigned URL and return only the public object URL.
-3. The app stores the URL only. Streamer approval is required before a paid banner renders in the overlay.
-
-## Environment Variables
-
-### Required
+For a full operator deployment, these are the env vars that matter most:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-# or legacy fallback:
+# legacy fallback if you are not using the newer publishable key:
 # NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_PRIVY_APP_ID=
 PRIVY_APP_SECRET=
 NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA=
+HELIUS_RPC_URL=
 ```
 
-### Optional
+Useful but optional:
 
 ```bash
 PRIVY_VERIFICATION_KEY=
-HELIUS_RPC_URL=
 NEXT_PUBLIC_SOLANA_RPC_URL=
+NEXT_PUBLIC_SITE_URL=
 CRON_SECRET=
 DEXSCREENER_WS_URL=
 FILEBASE_ACCESS_KEY_ID=
@@ -135,46 +109,62 @@ FILEBASE_BUCKET=
 NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL=
 ```
 
-Notes:
+## Where To Get Each Key
 
-- Privy is required for streamer login and stream registration. Advertiser checkout and the public directory do not require login.
-- `PRIVY_VERIFICATION_KEY` is preferred for backend token verification when available; `PRIVY_APP_SECRET` is retained as a fallback.
-- `HELIUS_RPC_URL` is the preferred server-side Solana RPC for payment verification. If omitted, payment verification falls back to `NEXT_PUBLIC_SOLANA_RPC_URL`, then Solana public mainnet RPC.
-- `NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA` is required for PumpFun's 10% commission route.
-- Filebase env vars are only required when the upload option is enabled. Direct advertiser-provided HTTPS URLs work without Filebase.
-- `NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL` should match your public bucket URL, for example `https://<bucket>.s3.filebase.com`.
+| Variable | Required | What it does in this repo | Where to get it |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Browser and server Supabase client base URL | Supabase project dashboard. See Project Settings / API or the project Connect dialog. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Public browser key for Supabase client access | Supabase Project Settings / API Keys. Prefer the publishable key. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional legacy fallback | Used only if you do not have a publishable key wired yet | Supabase Project Settings / API Keys / Legacy API Keys. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server-side admin client for writes, payment state, dashboards, and stream/ad management | Supabase Project Settings / API Keys / Legacy API Keys. Copy the `service_role` key and keep it server-only. |
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Yes for auth flows | Enables the Privy React provider and backend token verification | Privy Dashboard / Configuration / App settings / Basics. |
+| `PRIVY_APP_SECRET` | Yes for auth flows | Backend secret used for Privy server verification fallback | Privy Dashboard / Configuration / App settings / Basics. |
+| `PRIVY_VERIFICATION_KEY` | Optional but recommended | Lets the backend verify Privy access tokens without an extra key fetch path | Privy Dashboard / Configuration / App settings / Basics, under the verification key area. |
+| `NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA` | Yes for Pump commission routing | Public Solana address that receives platform fees for Pump ads | Generate or choose your own platform treasury wallet in Phantom, Solflare, Backpack, or a hardware-wallet-backed treasury setup. This is your wallet address, not a vendor-issued key. |
+| `HELIUS_RPC_URL` | Strongly recommended | Preferred Solana RPC endpoint for payment verification | Helius dashboard. Create an endpoint in the Endpoints section and copy its URL. |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Optional fallback | Client-side/public fallback RPC URL | Your chosen Solana RPC provider. Can also be another Helius endpoint if you want a public read URL. |
+| `CRON_SECRET` | Optional | Protects `GET /api/cron/payments` | Generate it yourself with `openssl rand -hex 32` or an equivalent secret generator. |
+| `DEXSCREENER_WS_URL` | Optional, not currently wired | Reserved for future/custom DexScreener WebSocket configuration | Leave unset unless you intentionally patch the client to consume it. |
+| `FILEBASE_ACCESS_KEY_ID` | Optional | Enables presigned upload URLs for Filebase-backed banner uploads | Filebase account credentials dashboard. |
+| `FILEBASE_SECRET_ACCESS_KEY` | Optional | Secret half of Filebase S3 credentials | Filebase account credentials dashboard. |
+| `FILEBASE_BUCKET` | Optional | Target Filebase bucket for uploads | A bucket you create in Filebase. |
+| `NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL` | Optional | Public base URL used to construct uploaded asset URLs | Usually your Filebase bucket URL, for example `https://<bucket>.s3.filebase.com`. |
+
+Official references:
+
+- Supabase API keys: https://supabase.com/docs/guides/api/api-keys
+- Privy app ID and app secret: https://docs.privy.io/api-reference/introduction
+- Privy verification key guidance: https://docs.privy.io/guide/server/authorization/verification
+- Privy optimization note for copied verification keys: https://docs.privy.io/recipes/dashboard/optimizing
+- Helius RPC endpoint setup: https://www.helius.dev/docs/rpc/overview/
 
 ## Local Setup
 
-### 1. Install
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Apply the database schema
+Node.js `>=20` is required.
 
-Create a Supabase project, then run:
+### 2. Create and configure Supabase
 
-- `supabase/migrations/001_initial.sql`
-- `supabase/migrations/002_payment_deposits.sql`
+Create a Supabase project, then apply all migrations in order:
 
-The second migration is additive and keeps `payments.deposit_address` and `payments.deposit_secret` present for existing projects.
+```text
+supabase/migrations/001_initial.sql
+supabase/migrations/002_payment_deposits.sql
+supabase/migrations/003_ad_ownership.sql
+supabase/migrations/004_open_livestream_ads.sql
+supabase/migrations/005_payment_routing_commissions.sql
+```
 
-### 3. Create storage
+### 3. Add env vars
 
-Create a private Supabase Storage bucket named `ad-media`.
+Create `.env.local` and add the required variables listed above.
 
-Create these folders:
-
-- `pending/`
-- `approved/`
-
-### 4. Set environment variables
-
-Add the env vars listed above.
-
-### 5. Start the app
+### 4. Run the app
 
 ```bash
 npm run dev
@@ -187,100 +177,59 @@ npm run dev
 npm run build
 npm run start
 npm run lint
-npm run test
 npm run typecheck
+npm run test
+npm run pipeline
 ```
 
-Node.js `>=20` is required.
+`npm run pipeline` runs:
 
-## Data Model
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test`
 
-The main tables live in `supabase/migrations/001_initial.sql`:
+## Operational Flow
 
-- `users`
-- `streams`
-- `ads`
-- `media_jobs`
-- `payments`
+### Creator flow
 
-Realtime publication is enabled for:
+1. A user authenticates with Privy.
+2. The frontend syncs the user through `POST /api/auth/sync`.
+3. The creator registers a stream through `POST /api/streams`.
+4. The overlay can heartbeat through `POST /api/streams/heartbeat`.
 
-- `ads`
-- `media_jobs`
-- `streams`
-- `payments`
+### Sponsor flow
 
-## Overlay Query Parameters
+1. A sponsor chooses a stream in the sponsor dashboard.
+2. `POST /api/ads` validates the token or banner input and creates the ad plus payment record.
+3. The sponsor sends SOL to the returned deposit address.
+4. `POST /api/payments/verify` verifies the transaction signature on Solana.
+5. Chart ads can activate immediately after payment verification.
+6. Banner ads move to streamer approval and are finalized through `POST /api/ads/review`.
 
-The shared overlay surface currently reads these common params:
+### Payment routing
 
-- `token`
-- `chain`
-- `position`
-- `size`
-- `theme`
-- `showChart`
-- `showMedia`
-- `mediaSrc`
-- `mediaType`
-- `stream`
+- non-banner, non-Pump ads can route directly to the streamer wallet
+- banner ads use escrow-style generated deposit addresses
+- Pump ads apply a platform commission and require `NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA`
 
-Example:
+## Verification
 
-```text
-/x-overlay?token=So11111111111111111111111111111111111111112&chain=solana&position=bottom-right&size=large&theme=dark&showChart=true&showMedia=true&stream=<stream-id>
-```
-
-The repo also contains a CSV-style overlay parser in `src/lib/overlay.ts` that supports multi-slot query values such as:
-
-```text
-token=aaa,bbb&chain=solana,base&position=top-left,bottom-right
-```
-
-That parser is covered by tests and is useful context for future multi-slot overlay work.
-
-## Defaults and Constraints
-
-- Default sponsor price: `0.2 SOL`
-- Default ad duration: `4 hours`
-- Supported ad payment asset in the current flow: `SOL`
-- Stream platforms: `x`, `youtube`, `twitch`, `pump`
-- Ad creation validates the token by checking DexScreener before a payment record is created
-
-## Testing
-
-Current Vitest coverage includes:
-
-- `tests/dexscreener.test.ts`
-  Synthetic candle generation from DexScreener snapshots.
-- `tests/overlay.test.ts`
-  Overlay config parsing, including CSV-style multi-slot params.
-
-Run:
+Use these before shipping changes:
 
 ```bash
-npm run test
+npm run pipeline
+npm run build
 ```
 
-## Deployment
+## Deployment Notes
 
-The app is Vercel-friendly and uses the App Router deployment model. Before deploying:
+- Vercel deployment is supported by `vercel.json`
+- `GET /api/cron/payments` is protected by `Authorization: Bearer $CRON_SECRET`
+- `HELIUS_RPC_URL` should be treated as the production RPC for payment verification
+- Filebase uploads are optional and separate from the default HTTPS banner URL flow
 
-- set all required env vars
-- apply both Supabase migrations
-- configure the Filebase bucket if you want upload-backed banner URLs
-- add `HELIUS_RPC_URL` so payment verification uses your Helius-backed Solana RPC in production
+## Extra Docs
 
-### Vercel notes
-
-- This repo is configured for Vercel with [vercel.json](./vercel.json).
-- Sponsor banner uploads use signed Filebase S3 upload URLs through `POST /api/filebase/upload-url`, followed by direct browser upload to Filebase.
-- This avoids Vercel Function request-body limits on large multipart uploads.
-- `GET /api/cron/payments` is available for optional Vercel Cron usage with `CRON_SECRET`. This is useful on paid plans when you want server-side payment reconciliation in addition to client polling.
-- verify your Solana RPC endpoint is reachable in the deployment environment
-
-## Repo Notes
-
-- The package name and app branding are now `hypertian`.
-- Firebase-era infrastructure has been removed from the active runtime path.
-- `README.md`, [CODE_INDEX.md](/mnt/d/mythOS/CAMIKEY/CODE_INDEX.md), and [docs/MIGRATION_NOTES.md](/mnt/d/mythOS/CAMIKEY/docs/MIGRATION_NOTES.md) should be treated as the current documentation entrypoints.
+- [CODE_INDEX.md](/mnt/d/mythOS/CAMIKEY/CODE_INDEX.md)
+- [docs/MIGRATION_NOTES.md](/mnt/d/mythOS/CAMIKEY/docs/MIGRATION_NOTES.md)
+- [docs/OPERATOR_GUIDE.md](/mnt/d/mythOS/CAMIKEY/docs/OPERATOR_GUIDE.md)

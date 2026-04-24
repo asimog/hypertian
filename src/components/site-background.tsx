@@ -33,6 +33,11 @@ export function SiteBackground() {
       return;
     }
 
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionQuery.matches) {
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -54,7 +59,7 @@ export function SiteBackground() {
     let lastTime = performance.now();
     let idlePhase = 0;
 
-    const particleCount = 210;
+    const particleCount = window.innerWidth < 768 ? 96 : 210;
     const particles: Particle[] = [];
 
     const palette = [

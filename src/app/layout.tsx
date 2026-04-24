@@ -11,18 +11,18 @@ export const metadata: Metadata = {
     default: 'Hypertian',
     template: '%s | Hypertian',
   },
-  description: 'Livestream ad rails for PumpFun, X, and Kick creators, with crypto overlays and payment verification.',
+  description: 'Operational ad rails for X and Pump livestreams, with creator approval, on-chain payment verification, and OBS-ready overlays.',
   applicationName: 'Hypertian',
-  keywords: ['livestream ads', 'PumpFun', 'X livestream ads', 'Kick livestream ads', 'crypto ads', 'DexScreener', 'Solana'],
+  keywords: ['livestream ads', 'PumpAds', 'X livestream ads', 'crypto ads', 'DexScreener', 'Solana', 'OBS overlays'],
   openGraph: {
     title: 'Hypertian',
-    description: 'Open ad rails for PumpFun, X, and Kick streamers.',
+    description: 'Operational ad rails for X and Pump livestreams.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Hypertian',
-    description: 'Livestream ad rails for PumpFun, X, and Kick creators.',
+    description: 'Operational ad rails for X and Pump livestreams.',
   },
 };
 
@@ -37,6 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <SiteBackground />
+          <a className="skip-link" href="#main-content">
+            Skip to content
+          </a>
           <AppShell>{children}</AppShell>
         </Providers>
       </body>

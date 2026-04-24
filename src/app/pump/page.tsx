@@ -15,7 +15,7 @@ export default function PumpLanePage() {
               Turn Pump streams into sponsor-ready inventory.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-copy-soft)]">
-              PumpAds gives Pump streamers a clean way to join Hypertian, carry approved sponsor media, and keep live token placements looking sharp on stream.
+              PumpAds gives Pump streamers a clean way to join Hypertian, register sponsor-ready inventory, approve banner creative, and keep live token placements looking sharp on stream.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link className="primary-button" href="/dashboard/streamer">
@@ -34,7 +34,7 @@ export default function PumpLanePage() {
             <div className="mt-6 grid gap-4">
               {[
                 ['Streamer signups', 'Pump creators can connect their live surface and become eligible for sponsor placements.'],
-                ['Approved creative', 'Campaign media is reviewed before it appears beside the live chart.'],
+                ['Approved creative', 'Banner creative is reviewed before it appears beside the live chart.'],
                 ['Verified payments', 'Sponsor placements activate after payment confirmation.'],
               ].map(([title, body], index) => (
                 <div className="rounded-[26px] border border-white/10 bg-white/[0.04] p-4" key={title}>

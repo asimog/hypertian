@@ -3,15 +3,15 @@ import { Activity, ArrowRight, BadgeDollarSign, RadioTower, ShieldCheck, Sparkle
 
 const LANES = [
   ['X Ads', '/x-overlay', 'Premium placement on the single @HyperMythX account with live token context and paid disclosure.'],
-  ['PumpAds', '/pump', 'A creator network where Pump streamers can join, go live, and earn from approved sponsor placements.'],
+  ['PumpAds', '/pump', 'A creator network where Pump streamers can register inventory, review banners, and run verified sponsor placements.'],
   ['Ad Desk', '/dashboard/sponsor', 'Launch funded ad placements, verify deposits, and monitor campaign status.'],
-  ['Creator Studio', '/dashboard/streamer', 'Manage live surfaces, media review, and payout-ready stream inventory.'],
+  ['Creator Studio', '/dashboard/streamer', 'Register stream inventory, approve banners, and manage payout-ready overlay surfaces.'],
 ] as const;
 
 const READINESS_ITEMS = [
   'X Ads is linked exclusively to @HyperMythX.',
   'PumpAds supports a growing network of Pump streamers who can join the platform.',
-  'Payment verification, approved media, and live overlays are wired for production deployment.',
+  'Payment verification, banner approval, and live overlays are wired for production deployment.',
 ] as const;
 
 export default function HomePage() {
@@ -28,7 +28,7 @@ export default function HomePage() {
               X Ads for one account. PumpAds for every Pump streamer.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-copy-soft)]">
-              Hypertian separates premium X inventory from an open PumpAds streamer platform. Sponsors get clean paid placements, creators get approved campaign flow, and every live surface stays production-ready.
+              Hypertian separates premium X inventory from an open PumpAds creator network. Sponsors get a clear checkout flow, creators keep approval control, and every live surface stays OBS-ready.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link className="primary-button" href="/x-overlay?token=So11111111111111111111111111111111111111112&chain=solana&position=bottom-right&size=large&theme=dark&showChart=true&showMedia=true">
@@ -53,7 +53,7 @@ export default function HomePage() {
               </div>
               <div className="hero-stat">
                 <span>Live</span>
-                verified ad delivery
+                verified payment checks
               </div>
             </div>
           </div>
@@ -71,7 +71,7 @@ export default function HomePage() {
               {[
                 ['X Ads', 'A single-account lane for @HyperMythX placements with tight brand control.'],
                 ['PumpAds', 'A streamer platform for Pump creators who want sponsor-ready live inventory.'],
-                ['Verified delivery', 'Campaigns activate after payment confirmation and media approval.'],
+                ['Verified delivery', 'Campaigns activate after payment confirmation and creator approval when banner creative is involved.'],
               ].map(([title, body], index) => (
                 <div className="rounded-[26px] border border-white/10 bg-white/[0.04] p-4" key={title}>
                   <div className="font-mono text-xs uppercase tracking-[0.24em] text-[var(--color-copy-faint)]">0{index + 1}</div>
@@ -119,7 +119,7 @@ export default function HomePage() {
               <BadgeDollarSign className="h-6 w-6 text-[var(--color-accent)]" />
               <h3 className="mt-4 text-lg font-semibold text-white">Buyer confidence</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--color-copy-soft)]">
-                Deposit status, campaign state, and creative approval are visible before an ad goes live.
+                Deposit status, campaign state, and banner approval are visible before an ad goes live.
               </p>
             </div>
           </div>
@@ -144,14 +144,14 @@ export default function HomePage() {
           <div className="text-xs uppercase tracking-[0.3em] text-[var(--color-accent)]">Media workflow</div>
           <h2 className="mt-4 text-2xl font-semibold text-white">Ads are reviewed before they go live.</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--color-copy-soft)]">
-            Sponsor media moves through approval before it appears beside a live token chart.
+            Banner creative moves through creator approval before it appears beside a live token chart.
           </p>
         </article>
         <article className="panel rounded-[32px] p-6">
           <div className="text-xs uppercase tracking-[0.3em] text-[var(--color-accent-alt)]">Shared engine</div>
           <h2 className="mt-4 text-2xl font-semibold text-white">Dex chart plus approved media together</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--color-copy-soft)]">
-            X Ads and PumpAds share the same chart, disclosure, media banner, and live-status components.
+            X Ads and PumpAds share the same chart, disclosure, banner, and live-status components.
           </p>
         </article>
         <article className="panel rounded-[32px] p-6">

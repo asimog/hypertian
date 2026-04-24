@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { href: '/streams', label: 'Directory' },
   { href: '/dashboard/streamer', label: 'Creator Studio' },
   { href: '/dashboard/sponsor', label: 'Ad Desk' },
-  { href: '/pump', label: 'PumpFun' },
+  { href: '/pump', label: 'PumpAds' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -31,15 +31,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="text-xs uppercase tracking-[0.35em] text-[var(--color-accent)]">Hypertian</div>
                 <span className="pill hidden md:inline-flex">Livestream ads</span>
               </div>
-              <div className="text-sm text-[var(--color-copy-soft)]">Open livestream ads with direct streamer payouts.</div>
+              <div className="text-sm text-[var(--color-copy-soft)]">Operational ad rails with creator approval and verified payouts.</div>
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-2">
+          <nav aria-label="Primary navigation" className="flex flex-wrap items-center gap-2">
             {NAV_ITEMS.map((item) => (
               <Link
                 aria-current={pathname === item.href ? 'page' : undefined}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
+                className={`inline-flex min-h-10 items-center rounded-full border px-4 py-2 text-sm transition ${
                   pathname === item.href
                     ? 'border-[rgba(124,228,210,0.5)] bg-[rgba(124,228,210,0.13)] text-white shadow-[0_8px_28px_rgba(54,164,157,0.18)]'
                     : 'border-white/10 bg-white/[0.03] text-[var(--color-copy-soft)] hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
@@ -61,7 +61,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 pb-16">{children}</main>
+      <main className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 pb-16" id="main-content">
+        {children}
+      </main>
     </div>
   );
 }
@@ -92,7 +94,7 @@ function PrivyAuthControls() {
       onClick={login}
       type="button"
     >
-      Connect
+      Connect account
     </button>
   );
 }

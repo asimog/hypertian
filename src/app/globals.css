@@ -47,6 +47,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body.menu-open {
+  overflow: hidden;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -218,7 +222,10 @@ textarea:focus-visible {
     transform 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+  cursor: pointer;
 }
 
 .primary-button {
@@ -238,6 +245,18 @@ textarea:focus-visible {
   transform: translateY(-1px);
 }
 
+.primary-button:active,
+.secondary-button:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+  transform: none;
+}
+
 .field {
   width: 100%;
   border-radius: 1.25rem;
@@ -251,6 +270,95 @@ textarea:focus-visible {
 
 .field::placeholder {
   color: var(--color-copy-faint);
+}
+
+.field:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 228, 210, 0.28);
+  background: rgba(5, 10, 13, 0.94);
+  padding: 0.7rem 1rem;
+  color: white;
+  transform: translateY(-180%);
+  transition: transform 150ms ease-out;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+.section-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.section-heading {
+  margin-top: 0.85rem;
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  color: white;
+}
+
+.section-copy {
+  margin-top: 0.9rem;
+  max-width: 42rem;
+  color: var(--color-copy-soft);
+  line-height: 1.7;
+}
+
+.status-note {
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.9rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--color-copy-soft);
+}
+
+.status-note[data-tone="danger"] {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(127, 29, 29, 0.24);
+  color: #fecaca;
+}
+
+.status-note[data-tone="success"] {
+  border-color: rgba(124, 228, 210, 0.28);
+  background: rgba(13, 49, 48, 0.5);
+  color: #d9fffa;
+}
+
+.soft-card {
+  border-radius: 1.5rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (min-width: 1024px) {
