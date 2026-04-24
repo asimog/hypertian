@@ -1,7 +1,8 @@
 import { fail, ok } from '@/lib/http';
 import { requirePrivyUser } from '@/lib/privy';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getUserByPrivyId } from '@/lib/supabase/queries';
+import { getUserByPrivyId, listAdsForStreamer, sortStreamsByBookingPriority } from '@/lib/supabase/queries';
+import { StreamRecord } from '@/lib/types';
 
 export async function GET() {
   try {
@@ -13,40 +14,19 @@ export async function GET() {
     }
 
     const supabase = createAdminClient();
-    const [streamsRes, adsRes, mediaJobsRes] = await Promise.all([
+    const [streamsRes, ads] = await Promise.all([
       supabase.from('streams').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-      supabase
-        .from('ads')
-        .select('*')
-        .in(
-          'stream_id',
-          (
-            await supabase.from('streams').select('id').eq('user_id', user.id)
-          ).data?.map((stream) => stream.id) ?? [],
-        )
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('media_jobs')
-        .select('*, ads!inner(stream_id, streams!inner(user_id))')
-        .eq('ads.streams.user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20),
+      listAdsForStreamer(user.id),
     ]);
 
     if (streamsRes.error) {
       throw streamsRes.error;
     }
-    if (adsRes.error) {
-      throw adsRes.error;
-    }
-    if (mediaJobsRes.error) {
-      throw mediaJobsRes.error;
-    }
 
     return ok({
-      streams: streamsRes.data ?? [],
-      ads: adsRes.data ?? [],
-      mediaJobs: (mediaJobsRes.data ?? []).map(({ ads, ...job }) => job),
+      streams: sortStreamsByBookingPriority((streamsRes.data ?? []) as StreamRecord[]),
+      ads,
+      mediaJobs: [],
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Failed to load streamer dashboard.', 400);

@@ -27,14 +27,16 @@ function PrivyAuthGate({
 
   if (!authenticated) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-8 text-center shadow-2xl shadow-emerald-950/30">
-        <LockKeyhole className="mx-auto mb-4 h-10 w-10 text-emerald-400" />
-        <h2 className="text-2xl font-semibold text-white">{role === 'streamer' ? 'Streamer' : 'Sponsor'} login required</h2>
-        <p className="mt-3 text-sm leading-6 text-slate-300">
-          Privy handles wallet + social auth, creates embedded wallets, and syncs your profile into Supabase.
+      <div className="panel mx-auto max-w-2xl rounded-[32px] p-8 text-center shadow-[0_28px_80px_rgba(6,16,19,0.5)]">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
+          <LockKeyhole className="h-7 w-7 text-[var(--color-accent)]" />
+        </div>
+        <h2 className="text-2xl font-semibold text-white">{role === 'streamer' ? 'Creator' : 'Buyer'} login required</h2>
+        <p className="mt-3 text-sm leading-6 text-[var(--color-copy-soft)]">
+          Privy keeps Hypertian accounts secure and syncs approved creator or buyer profiles.
         </p>
         <button
-          className="mt-6 rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+          className="primary-button mt-6"
           onClick={login}
           type="button"
         >

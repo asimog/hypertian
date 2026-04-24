@@ -1,50 +1,79 @@
-import { DEFAULT_AD_DURATION_HOURS, DEFAULT_AD_PRICE_SOL } from '@/lib/constants';
 import { getPairsByTokenAddress } from '@/lib/dexscreener';
-import { isPrivyEnabled } from '@/lib/env';
 import { fail, ok } from '@/lib/http';
-import { requirePrivyUser } from '@/lib/privy';
-import { createAdWithPayment, getUserByPrivyId } from '@/lib/supabase/queries';
+import { adTypeSchema, assertHttpsUrl } from '@/lib/platform';
+import { createAdWithDirectPayment, getStreamById, listActiveAdsForStream } from '@/lib/supabase/queries';
+import { AdRecord, OverlayActiveAd } from '@/lib/types';
 import { z } from 'zod';
 
 const schema = z.object({
   streamId: z.string().min(1),
-  tokenAddress: z.string().min(16),
-  chain: z.enum(['solana', 'ethereum', 'base']),
+  adType: adTypeSchema.default('chart'),
+  tokenAddress: z.string().optional().nullable(),
+  chain: z.enum(['solana', 'ethereum', 'base', 'bsc', 'arbitrum', 'polygon']).default('solana'),
+  bannerUrl: z.string().optional().nullable(),
   position: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right', 'full']),
   size: z.enum(['small', 'medium', 'large']),
-  asset: z.enum(['SOL']).default('SOL'),
+  advertiserContact: z.string().max(160).optional().nullable(),
+  advertiserNote: z.string().max(500).optional().nullable(),
 });
+
+export async function GET(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const streamId = url.searchParams.get('stream') || url.searchParams.get('streamId');
+    if (!streamId) {
+      return fail('Missing stream parameter.');
+    }
+
+    const [stream, ads] = await Promise.all([getStreamById(streamId), listActiveAdsForStream(streamId)]);
+    const overlayAds: OverlayActiveAd[] = ads.map((ad: AdRecord) => ({
+      ...ad,
+      media_src: ad.ad_type === 'banner' ? ad.banner_url ?? null : null,
+      media_type: ad.ad_type === 'banner' ? 'image' : null,
+    }));
+
+    return ok({ stream, ads: overlayAds });
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : 'Failed to load active ads.');
+  }
+}
 
 export async function POST(request: Request) {
   try {
-    const claims = isPrivyEnabled() ? await requirePrivyUser() : null;
-    const sponsor = claims ? await getUserByPrivyId(claims.user_id) : null;
-
-    if (isPrivyEnabled() && !sponsor) {
-      return fail('User must be synced before creating a campaign.', 403);
-    }
-
     const body = schema.parse(await request.json());
-    const pairs = await getPairsByTokenAddress(body.chain, body.tokenAddress);
-    const primaryPair = pairs[0];
-    if (!primaryPair) {
-      return fail('No DexScreener pair found for that token.');
+    let dexPairAddress: string | null = null;
+    let tokenAddress = body.tokenAddress ?? null;
+    let bannerUrl = body.bannerUrl ?? null;
+
+    if (body.adType === 'chart') {
+      if (!tokenAddress || tokenAddress.length < 16) {
+        return fail('Token address is required for chart ads.');
+      }
+      const pairs = await getPairsByTokenAddress(body.chain, tokenAddress);
+      const primaryPair = pairs[0];
+      if (!primaryPair) {
+        return fail('No DexScreener pair found for that token.');
+      }
+      dexPairAddress = primaryPair.pairAddress;
+    } else {
+      if (!bannerUrl) {
+        return fail('Banner URL is required for banner ads.');
+      }
+      bannerUrl = assertHttpsUrl(bannerUrl, 'Banner URL');
+      tokenAddress = '';
     }
 
-    const expiresAt = new Date(Date.now() + DEFAULT_AD_DURATION_HOURS * 60 * 60 * 1000).toISOString();
-    const amount = DEFAULT_AD_PRICE_SOL;
-
-    const { ad, payment } = await createAdWithPayment({
+    const { ad, payment, amount, durationMinutes, paymentRoute } = await createAdWithDirectPayment({
       streamId: body.streamId,
-      sponsorId: sponsor?.id ?? null,
-      sponsorWallet: sponsor?.wallet_address ?? null,
-      tokenAddress: body.tokenAddress,
+      adType: body.adType,
+      tokenAddress,
       chain: body.chain,
+      dexPairAddress,
+      bannerUrl,
       position: body.position,
       size: body.size,
-      expiresAt,
-      amount,
-      currency: body.asset,
+      advertiserContact: body.advertiserContact ?? null,
+      advertiserNote: body.advertiserNote ?? null,
     });
 
     return ok({
@@ -52,7 +81,14 @@ export async function POST(request: Request) {
       paymentId: payment.id,
       amount,
       currency: payment.currency,
+      durationMinutes,
+      recipientAddress: payment.deposit_address,
       depositAddress: payment.deposit_address,
+      paymentRecipientKind: paymentRoute.recipientKind,
+      paidToWallet: paymentRoute.paidToWallet,
+      commissionBps: paymentRoute.commissionBps,
+      platformFeeAmount: paymentRoute.platformFeeAmount,
+      streamerAmount: paymentRoute.streamerAmount,
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Failed to create ad campaign.', 400);

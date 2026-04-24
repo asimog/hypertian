@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DexChart from '@/components/DexChart';
 import MediaBanner from '@/components/MediaBanner';
 import OverlayDisclosure from '@/components/OverlayDisclosure';
 import { useDexScreener } from '@/hooks/useDexScreener';
+import { STREAM_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
+import { OverlayActiveAd, StreamRecord } from '@/lib/types';
 
-type Platform = 'x' | 'youtube' | 'twitch' | 'pump';
+type Platform = 'x' | 'pump' | 'kick';
 
 interface OverlaySurfaceProps {
   platform: Platform;
@@ -33,16 +35,20 @@ function getPositionClass(position: string) {
 }
 
 export default function OverlaySurface({ platform, searchParams }: OverlaySurfaceProps) {
-  const token = searchParams.get('token') || '';
-  const chain = searchParams.get('chain') || 'solana';
-  const position = searchParams.get('position') || 'bottom-right';
-  const size = searchParams.get('size') || 'medium';
-  const theme = searchParams.get('theme') || 'dark';
-  const showChart = searchParams.get('showChart') !== 'false';
-  const showMedia = searchParams.get('showMedia') !== 'false';
-  const mediaSrc = searchParams.get('mediaSrc');
-  const mediaType = (searchParams.get('mediaType') as 'image' | 'gif' | 'video' | null) || null;
   const streamId = searchParams.get('stream');
+  const [activeAds, setActiveAds] = useState<OverlayActiveAd[]>([]);
+  const [stream, setStream] = useState<StreamRecord | null>(null);
+  const activeAd = activeAds[0] ?? null;
+  const isBannerAd = activeAd?.ad_type === 'banner';
+  const token = !isBannerAd ? activeAd?.token_address || searchParams.get('token') || '' : '';
+  const chain = activeAd?.chain || searchParams.get('chain') || 'solana';
+  const position = activeAd?.position || searchParams.get('position') || 'bottom-right';
+  const size = activeAd?.size || searchParams.get('size') || 'medium';
+  const theme = searchParams.get('theme') || 'dark';
+  const showChart = searchParams.get('showChart') !== 'false' && !isBannerAd;
+  const showMedia = searchParams.get('showMedia') !== 'false';
+  const mediaSrc = activeAd?.media_src || (!activeAd ? stream?.default_banner_url : null) || searchParams.get('mediaSrc');
+  const mediaType = activeAd?.media_type || (mediaSrc ? 'image' : null);
 
   const { data, loading } = useDexScreener(token, chain);
   const chartSize = useMemo(
@@ -56,19 +62,57 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
     document.body.style.overflow = 'hidden';
     document.body.style.margin = '0';
 
+    const sendHeartbeat = () => {
+      if (!streamId) {
+        return;
+      }
+
+      void fetch('/api/streams/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamId }),
+      });
+    };
+
+    sendHeartbeat();
     const heartbeat = streamId
       ? setInterval(() => {
-          void fetch('/api/streams/heartbeat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ streamId }),
-          });
-        }, 15_000)
+          sendHeartbeat();
+        }, STREAM_HEARTBEAT_INTERVAL_MS)
+      : null;
+
+    const loadActiveAds = async () => {
+      if (!streamId) {
+        setActiveAds([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/ads?stream=${encodeURIComponent(streamId)}`, {
+          cache: 'no-store',
+        });
+        if (!response.ok) {
+          return;
+        }
+        const json = (await response.json()) as { ads?: OverlayActiveAd[]; stream?: StreamRecord | null };
+        setStream(json.stream ?? null);
+        setActiveAds(json.ads ?? []);
+      } catch {
+        // Query-param previews should keep working even when the ad feed is unreachable.
+      }
+    };
+
+    void loadActiveAds();
+    const adRefresh = streamId
+      ? setInterval(() => {
+          void loadActiveAds();
+        }, 20_000)
       : null;
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         window.dispatchEvent(new Event('resize'));
+        void loadActiveAds();
       }
     };
 
@@ -77,6 +121,9 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
     return () => {
       if (heartbeat) {
         clearInterval(heartbeat);
+      }
+      if (adRefresh) {
+        clearInterval(adRefresh);
       }
       document.removeEventListener('visibilitychange', handleVisibility);
     };

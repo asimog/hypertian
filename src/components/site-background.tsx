@@ -17,8 +17,6 @@ type Particle = {
 
 const DISABLED_ROUTES = new Set([
   '/x-overlay',
-  '/youtube-overlay',
-  '/twitch-overlay',
   '/pump-overlay',
 ]);
 

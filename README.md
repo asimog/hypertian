@@ -2,43 +2,141 @@
 
 ## Legal Disclaimer
 Hypertian is a self-hosted tool for personal livestream overlays.
-You are solely responsible for complying with platform rules (X, YouTube, Twitch, etc.), Paid Partnerships policies, and all laws.
+You are responsible for complying with platform rules, paid partnership policies, and applicable law.
 
 Always enable native sponsorship disclosure where required.
 Use at your own risk.
 
-Not affiliated with any platform. No warranty.
+Not affiliated with X, YouTube, Twitch, Pump.fun, DexScreener, Privy, Supabase, or Vercel.
+No warranty.
 
-Hypertian is a Next.js 15+ App Router project for running your own crypto-native advertising channel. It combines live DexScreener chart billboards, approved sponsor media, OBS-safe overlays, optional Privy authentication, generated Solana deposit addresses for ad activation, and Supabase data/storage into a self-hosted creator stack.
+## Overview
+
+Hypertian is a Next.js App Router project for running a self-hosted crypto advertising lane on top of livestream overlays. The current repo combines:
+
+- creator-facing overlay routes for X, YouTube, Twitch, and Pump.fun
+- a streamer dashboard for generating stream records and OBS-ready URLs
+- a sponsor dashboard for creating chart ad slots and funding them with on-chain SOL deposits
+- Supabase-backed records for users, streams, ads, media jobs, and payments
+- optional Privy auth for streamer-side identity and stream creation
+- DexScreener-backed token search, pair lookup, and live chart rendering
+
+The app is already beyond the migration phase: it has active routes, API handlers, Supabase migrations, and Vitest coverage for core parsing/data helpers.
 
 ## Stack
 
-- Next.js 15 App Router + strict TypeScript
-- Tailwind CSS
-- Optional Privy for creator auth + embedded Solana wallets
-- Supabase PostgreSQL + Realtime + Storage
-- Lightweight Charts for live chart rendering
-- DexScreener REST + WebSocket for live token data
-- Vercel-ready deployment model
+- Next.js 15 App Router
+- React 18
+- TypeScript
+- Tailwind CSS 4
+- Supabase Postgres + Storage
+- Privy for optional auth and embedded wallets
+- Solana Web3.js for deposit-address generation and payment verification
+- DexScreener REST data plus live chart polling/websocket helpers
+- Vitest
 
-## Lanes
+## Current Product Surface
 
+### Public routes
+
+- `/`
+  Landing page and lane entrypoint.
 - `/x-overlay`
-  X-first, polished overlay route for OBS Browser Source and RTMP workflows.
+  Highest-priority overlay surface for X livestream workflows.
 - `/youtube-overlay`
-  YouTube overlay lane using the same shared chart/media/disclosure engine.
+  YouTube-flavored overlay route using the shared overlay engine.
 - `/twitch-overlay`
-  Twitch overlay lane with the same personal-tool model.
+  Twitch-flavored overlay route using the shared overlay engine.
 - `/pump-overlay`
-  Pump overlay route for Pump.fun-focused usage.
+  Pump.fun-flavored overlay route using the shared overlay engine.
 - `/pump`
-  Pump Ads lane, intended as the reusable multi-user platform box.
-- `/dashboard/streamer`
-  Creator dashboard for stream records, pending media jobs, and overlay URL generation.
-- `/dashboard/sponsor`
-  Sponsor workflow for launching chart + media proposals.
+  Pump lane landing page.
 
-## Setup
+### Dashboard routes
+
+- `/dashboard/streamer`
+  Stream management, OBS URL generation, and pending media job review surface.
+- `/dashboard/sponsor`
+  Sponsor campaign creation, generated deposit address display, and payment polling.
+
+### API routes
+
+- `POST /api/auth/sync`
+  Upserts a Privy-authenticated user into Supabase.
+- `POST /api/streams`
+  Creates a stream record for `x`, `youtube`, `twitch`, or `pump`.
+- `POST /api/streams/heartbeat`
+  Marks a stream as live and refreshes `last_heartbeat`.
+- `POST /api/ads`
+  Validates a token against DexScreener, creates an ad, and creates a pending SOL payment.
+- `POST /api/payments/verify`
+  Checks whether a generated Solana deposit address has received the required payment and activates the ad on success.
+- `POST /api/media-jobs/upload`
+  Uploads sponsor media into Supabase Storage and creates a pending media job.
+- `POST /api/media-jobs/review`
+  Approves or rejects a media job and moves approved assets from `pending/` to `approved/`.
+- `GET /api/dex/search`
+  DexScreener search proxy.
+- `GET /api/dex/pair`
+  DexScreener pair lookup proxy by pair address or token address.
+
+## Runtime Model
+
+### Streamer flow
+
+1. A Privy-authenticated streamer syncs identity through `/api/auth/sync`.
+2. The streamer creates a stream record from `/dashboard/streamer`.
+3. Hypertian generates an overlay URL for OBS Browser Source usage.
+4. The overlay page sends a heartbeat every 15 seconds when a `stream` query param is present.
+5. Active ads for that stream are expected to render through the shared overlay surface.
+
+### Sponsor flow
+
+1. A sponsor opens `/dashboard/sponsor`.
+2. They choose a stream, token address, chain, position, and size.
+3. `POST /api/ads` confirms a DexScreener pair exists and creates:
+   - an `ads` record with an expiration window
+   - a `payments` record with a generated Solana deposit address
+4. The dashboard polls `POST /api/payments/verify`.
+5. Once the required SOL amount lands, the payment is marked verified and the ad is activated.
+
+### Media workflow
+
+1. Sponsor media uploads go to the `ad-media` bucket under `pending/`.
+2. Each upload creates a `media_jobs` row with `pending` status.
+3. Review actions move approved files into `approved/` and mark the job as reviewed.
+
+## Environment Variables
+
+### Required
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+HELIUS_RPC_URL=
+```
+
+### Optional
+
+```bash
+NEXT_PUBLIC_PRIVY_APP_ID=
+PRIVY_APP_SECRET=
+PRIVY_VERIFICATION_KEY=
+NEXT_PUBLIC_SOLANA_RPC_URL=
+NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA=
+CRON_SECRET=
+DEXSCREENER_WS_URL=
+```
+
+Notes:
+
+- Privy is optional for booting the app, but streamer-side creation/sync flows depend on it.
+- `HELIUS_RPC_URL` is the preferred Solana RPC for payment verification on Vercel.
+- `NEXT_PUBLIC_SOLANA_RPC_URL` remains available as a fallback if `HELIUS_RPC_URL` is omitted.
+- Generated deposit-address verification currently supports `SOL` payments only.
+
+## Local Setup
 
 ### 1. Install
 
@@ -46,164 +144,138 @@ Hypertian is a Next.js 15+ App Router project for running your own crypto-native
 npm install
 ```
 
-### 2. Create Supabase project
+### 2. Apply the database schema
 
-Set these environment variables:
+Create a Supabase project, then run:
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-```
+- `supabase/migrations/001_initial.sql`
+- `supabase/migrations/002_payment_deposits.sql`
 
-Run the schema below in the Supabase SQL editor.
+The second migration is additive and keeps `payments.deposit_address` and `payments.deposit_secret` present for existing projects.
 
-### 3. Configure Privy (optional)
-
-Set:
-
-```bash
-NEXT_PUBLIC_PRIVY_APP_ID=
-PRIVY_APP_SECRET=
-PRIVY_VERIFICATION_KEY=
-NEXT_PUBLIC_SOLANA_RPC_URL=
-```
-
-If Privy is configured, creator login and user sync stay enabled. If Privy is omitted, the sponsor lane still works with generated Solana deposit addresses and automatic on-chain activation.
-
-### 4. Storage bucket
+### 3. Create storage
 
 Create a private Supabase Storage bucket named `ad-media`.
 
-Create folders:
+Create these folders:
 
 - `pending/`
 - `approved/`
 
-### 5. Run
+### 4. Set environment variables
+
+Add the env vars listed above.
+
+### 5. Start the app
 
 ```bash
 npm run dev
 ```
 
-## Supabase SQL Schema
+## Scripts
 
-```sql
-create extension if not exists "uuid-ossp";
-
-create table if not exists users (
-  id uuid primary key default uuid_generate_v4(),
-  privy_id text unique not null,
-  wallet_address text,
-  role text default 'creator',
-  created_at timestamptz default now()
-);
-
-create table if not exists streams (
-  id uuid primary key default uuid_generate_v4(),
-  user_id uuid references users(id),
-  platform text not null, -- 'x', 'youtube', 'twitch', 'pump'
-  is_live boolean default false,
-  last_heartbeat timestamptz,
-  created_at timestamptz default now()
-);
-
-create table if not exists ads (
-  id uuid primary key default uuid_generate_v4(),
-  stream_id uuid references streams(id),
-  token_address text not null,
-  chain text default 'solana',
-  position text default 'bottom-right',
-  size text default 'medium',
-  is_active boolean default false,
-  expires_at timestamptz,
-  created_at timestamptz default now()
-);
-
-create table if not exists media_jobs (
-  id uuid primary key default uuid_generate_v4(),
-  ad_id uuid references ads(id),
-  sponsor_wallet text,
-  media_path text,                    -- Supabase storage path
-  media_type text,                    -- 'image', 'gif', 'video'
-  status text check (status in ('pending', 'approved', 'rejected')) default 'pending',
-  reviewed_at timestamptz,
-  created_at timestamptz default now()
-);
-
-create table if not exists payments (
-  id uuid primary key default uuid_generate_v4(),
-  ad_id uuid references ads(id),
-  tx_hash text unique,
-  amount numeric(20,8),
-  currency text default 'SOL',
-  deposit_address text,
-  deposit_secret text,
-  status text default 'pending',
-  verified_at timestamptz,
-  created_at timestamptz default now()
-);
-
-alter publication supabase_realtime add table ads, media_jobs, streams, payments;
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run test
+npm run typecheck
 ```
 
-## OBS Guide
+Node.js `>=20` is required.
 
-Use a Browser Source with:
+## Data Model
 
-- Width: `1920`
-- Height: `1080`
-- Custom CSS: none
-- Shutdown source when not visible: off
-- Refresh browser when scene becomes active: on
+The main tables live in `supabase/migrations/001_initial.sql`:
 
-Example X overlay URL:
+- `users`
+- `streams`
+- `ads`
+- `media_jobs`
+- `payments`
 
-```text
-/x-overlay?token=So11111111111111111111111111111111111111112&chain=solana&position=bottom-right&size=large&theme=dark&showChart=true&showMedia=true
-```
+Realtime publication is enabled for:
 
-Common params:
+- `ads`
+- `media_jobs`
+- `streams`
+- `payments`
+
+## Overlay Query Parameters
+
+The shared overlay surface currently reads these common params:
 
 - `token`
 - `chain`
-- `position=bottom-right|top-left|center`
-- `size=medium|large`
-- `theme=dark|light`
-- `showChart=true|false`
-- `showMedia=true|false`
+- `position`
+- `size`
+- `theme`
+- `showChart`
+- `showMedia`
 - `mediaSrc`
-- `mediaType=image|gif|video`
+- `mediaType`
 - `stream`
 
-Every overlay keeps a fixed disclosure bar visible:
+Example:
 
-`Paid Partnership • Sponsored Chart + Media • DexScreener • Not financial advice`
+```text
+/x-overlay?token=So11111111111111111111111111111111111111112&chain=solana&position=bottom-right&size=large&theme=dark&showChart=true&showMedia=true&stream=<stream-id>
+```
 
-## Payment Flow
+The repo also contains a CSV-style overlay parser in `src/lib/overlay.ts` that supports multi-slot query values such as:
 
-- Sponsor creates an ad slot in `/dashboard/sponsor`.
-- Hypertian generates a unique Solana deposit address for that payment.
-- Sponsor sends the exact SOL amount to that address.
-- The dashboard polls `/api/payments/verify` and activates the ad automatically once the deposit is confirmed.
-- Privy remains available for creator auth, but it is not required for the sponsor payment path.
+```text
+token=aaa,bbb&chain=solana,base&position=top-left,bottom-right
+```
 
-## DexScreener Notes
+That parser is covered by tests and is useful context for future multi-slot overlay work.
 
-- Initial pair data comes from DexScreener REST token lookup.
-- Realtime refresh uses the DexScreener WebSocket endpoint provided in the current Hypertian spec.
-- The hook reconnects automatically and keeps a rolling history buffer for chart rendering.
+## Defaults and Constraints
 
-## Migration Summary
+- Default sponsor price: `0.2 SOL`
+- Default ad duration: `4 hours`
+- Supported ad payment asset in the current flow: `SOL`
+- Stream platforms: `x`, `youtube`, `twitch`, `pump`
+- Ad creation validates the token by checking DexScreener before a payment record is created
 
-- Firebase config, scripts, and Firestore-first data model were removed.
-- The repo is being reshaped into Hypertian with shared overlay components and per-platform routes.
-- X overlay is the highest-priority production surface.
-- Supabase replaces the backend/state layer.
-- Firebase was removed.
-- Privy is now optional instead of mandatory.
-- Sponsor payments use generated Solana deposit addresses and auto-activation.
+## Testing
+
+Current Vitest coverage includes:
+
+- `tests/dexscreener.test.ts`
+  Synthetic candle generation from DexScreener snapshots.
+- `tests/overlay.test.ts`
+  Overlay config parsing, including CSV-style multi-slot params.
+
+Run:
+
+```bash
+npm run test
+```
 
 ## Deployment
 
-Deploy to Vercel after adding the environment variables above. The project is App Router based and configured for standalone output.
+The app is Vercel-friendly and uses the App Router deployment model. Before deploying:
+
+- set all required env vars
+- apply both Supabase migrations
+- create the `ad-media` storage bucket
+- add `HELIUS_RPC_URL` so payment verification uses your Helius-backed Solana RPC
+
+### Vercel notes
+
+- This repo is configured for Vercel with [vercel.json](./vercel.json).
+- Sponsor media uploads should use signed Supabase upload URLs through:
+  - `POST /api/media-jobs/upload` to create a signed upload token
+  - direct browser upload to Supabase Storage
+  - `POST /api/media-jobs/complete` to create the `media_jobs` row after upload
+- This avoids Vercel Function request-body limits on large multipart uploads.
+- `GET /api/cron/payments` is available for optional Vercel Cron usage with `CRON_SECRET`. This is useful on paid plans when you want server-side payment reconciliation in addition to client polling.
+- verify your Solana RPC endpoint is reachable in the deployment environment
+
+## Repo Notes
+
+- The package name and app branding are now `hypertian`.
+- Firebase-era infrastructure has been removed from the active runtime path.
+- `README.md`, [CODE_INDEX.md](/mnt/d/mythOS/CAMIKEY/CODE_INDEX.md), and [docs/MIGRATION_NOTES.md](/mnt/d/mythOS/CAMIKEY/docs/MIGRATION_NOTES.md) should be treated as the current documentation entrypoints.

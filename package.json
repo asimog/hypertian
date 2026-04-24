@@ -9,11 +9,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "pipeline": "npm run lint && npm run typecheck && npm run test",
     "test": "vitest run",
     "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@farcaster/mini-app-solana": "^2.0.0",
+    "@farcaster/miniapp-sdk": "0.3.0",
     "@privy-io/node": "^0.15.0",
     "@privy-io/react-auth": "^3.22.1",
     "@solana-program/memo": "^0.8.0",
@@ -28,7 +30,7 @@
     "clsx": "^2.1.1",
     "lightweight-charts": "^5.0.8",
     "lucide-react": "^0.542.0",
-    "next": "15.5.12",
+    "next": "15.5.15",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "server-only": "^0.0.1",
@@ -42,10 +44,10 @@
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
     "eslint": "9.7.0",
-    "eslint-config-next": "15.5.12",
+    "eslint-config-next": "15.5.15",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.12",
     "typescript": "5.4.5",
-    "vitest": "1.6.0"
+    "vitest": "1.6.1"
   }
 }

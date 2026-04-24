@@ -1,4 +1,6 @@
 import { SponsorDashboard } from '@/components/sponsor-dashboard';
+import { listPublicStreams } from '@/lib/supabase/queries';
 export default async function SponsorDashboardPage() {
-  return <SponsorDashboard ads={[]} streams={[]} />;
+  const streams = await listPublicStreams();
+  return <SponsorDashboard ads={[]} streams={streams} />;
 }

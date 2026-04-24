@@ -3,25 +3,26 @@
 import { PrivyProvider } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 import { ReactNode } from 'react';
-import { getPublicEnv, isPrivyEnabled } from '@/lib/env';
+import { getPublicEnv, isPrivyEnabled, isSupabaseEnabled } from '@/lib/env';
 import { SupabaseProvider } from '@/components/SupabaseProvider';
 import { createClient } from '@/lib/supabase/client';
 
 export function Providers({ children }: { children: ReactNode }) {
   const env = getPublicEnv();
-  const supabaseClient = createClient();
+  const supabaseClient = isSupabaseEnabled() ? createClient() : null;
+  const content = supabaseClient ? <SupabaseProvider supabaseClient={supabaseClient}>{children}</SupabaseProvider> : children;
 
   if (!isPrivyEnabled() || !env.NEXT_PUBLIC_PRIVY_APP_ID) {
-    return <SupabaseProvider supabaseClient={supabaseClient}>{children}</SupabaseProvider>;
+    return content;
   }
 
   return (
     <PrivyProvider
       appId={env.NEXT_PUBLIC_PRIVY_APP_ID}
       config={{
-        loginMethods: ['email', 'wallet'],
+        loginMethods: ['email', 'wallet', 'google', 'twitter'],
         appearance: {
-          accentColor: '#22c55e',
+          accentColor: '#7ce4d2',
           walletChainType: 'ethereum-and-solana',
           theme: 'dark',
           landingHeader: 'Hypertian',
@@ -38,7 +39,7 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <SupabaseProvider supabaseClient={supabaseClient}>{children}</SupabaseProvider>
+      {content}
     </PrivyProvider>
   );
 }

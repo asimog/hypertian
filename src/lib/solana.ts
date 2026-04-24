@@ -43,3 +43,64 @@ export async function getSolanaDepositPaymentStatus(input: {
     txHash: matchingSignature,
   };
 }
+
+export async function verifyDirectSolPayment(input: {
+  signature: string;
+  recipient: string;
+  amount: number;
+  minBlockTime?: number | null;
+}) {
+  const connection = createSolanaConnection();
+  const recipient = new PublicKey(input.recipient);
+  const transaction = await connection.getParsedTransaction(input.signature, {
+    commitment: 'confirmed',
+    maxSupportedTransactionVersion: 0,
+  });
+
+  if (!transaction) {
+    return {
+      verified: false,
+      amountReceived: 0,
+      reason: 'Transaction was not found or is not confirmed.',
+    };
+  }
+
+  if (transaction.meta?.err) {
+    return {
+      verified: false,
+      amountReceived: 0,
+      reason: 'Transaction failed on-chain.',
+    };
+  }
+
+  if (input.minBlockTime && transaction.blockTime && transaction.blockTime < input.minBlockTime) {
+    return {
+      verified: false,
+      amountReceived: 0,
+      reason: 'Transaction is older than the ad checkout.',
+    };
+  }
+
+  const accountKeys = transaction.transaction.message.accountKeys;
+  const recipientIndex = accountKeys.findIndex((account) => account.pubkey.equals(recipient));
+  if (recipientIndex < 0) {
+    return {
+      verified: false,
+      amountReceived: 0,
+      reason: 'Transaction does not include the payout wallet.',
+    };
+  }
+
+  const preBalance = transaction.meta?.preBalances?.[recipientIndex] ?? 0;
+  const postBalance = transaction.meta?.postBalances?.[recipientIndex] ?? 0;
+  const amountReceived = Math.max(0, postBalance - preBalance) / LAMPORTS_PER_SOL;
+
+  return {
+    verified: amountReceived + 0.000001 >= input.amount,
+    amountReceived,
+    reason:
+      amountReceived + 0.000001 >= input.amount
+        ? null
+        : `Payment amount is too low. Received ${amountReceived.toFixed(9)} SOL.`,
+  };
+}

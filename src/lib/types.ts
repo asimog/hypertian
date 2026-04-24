@@ -5,6 +5,11 @@ export type AdPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-righ
 export type AdSize = 'small' | 'medium' | 'large';
 export type OverlayTheme = 'dark' | 'light';
 export type SupportedChain = 'solana' | 'ethereum' | 'base' | 'bsc' | 'arbitrum' | 'polygon';
+export type StreamPlatform = 'x' | 'pump' | 'kick';
+export type PaymentRecipientKind = 'streamer_direct' | 'escrow';
+export type StreamVerificationStatus = 'unverified' | 'pending' | 'verified';
+export type AdType = 'chart' | 'banner';
+export type AdStatus = 'pending_payment' | 'pending_streamer_approval' | 'active' | 'rejected' | 'expired';
 
 export interface AppUser {
   id: string;
@@ -17,7 +22,19 @@ export interface AppUser {
 export interface StreamRecord {
   id: string;
   user_id: string;
-  platform: 'x' | 'youtube' | 'twitch' | 'pump';
+  platform: StreamPlatform;
+  display_name: string | null;
+  profile_url: string | null;
+  stream_url: string | null;
+  price_sol: number | null;
+  payout_wallet: string | null;
+  default_banner_url: string | null;
+  overlay_secret_hash: string | null;
+  overlay_verified_at: string | null;
+  verification_status: StreamVerificationStatus | null;
+  pump_mint: string | null;
+  pump_deployer_wallet: string | null;
+  pump_creator_verified: boolean | null;
   is_live: boolean;
   last_heartbeat: string | null;
   created_at: string;
@@ -28,8 +45,18 @@ export interface AdRecord {
   stream_id: string;
   sponsor_id?: string | null;
   sponsor_wallet?: string | null;
+  ad_type?: AdType | null;
+  status?: AdStatus | null;
   token_address: string;
   chain: string;
+  dex_pair_address?: string | null;
+  banner_url?: string | null;
+  duration_minutes?: number | null;
+  starts_at?: string | null;
+  payment_tx_signature?: string | null;
+  paid_to_wallet?: string | null;
+  advertiser_contact?: string | null;
+  advertiser_note?: string | null;
   position: string;
   size: string;
   is_active: boolean;
@@ -46,6 +73,11 @@ export interface PaymentRecord {
   status: string;
   deposit_address: string | null;
   deposit_secret: string | null;
+  payment_recipient_kind?: PaymentRecipientKind | null;
+  commission_bps?: number | null;
+  platform_fee_amount?: number | null;
+  streamer_amount?: number | null;
+  platform_treasury_wallet?: string | null;
   verified_at: string | null;
   created_at: string;
 }
@@ -59,6 +91,16 @@ export interface MediaJobRecord {
   status: 'pending' | 'approved' | 'rejected';
   reviewed_at: string | null;
   created_at: string;
+}
+
+export interface OverlayActiveAd extends AdRecord {
+  media_src: string | null;
+  media_type: MediaJobRecord['media_type'];
+}
+
+export interface OverlayStreamState {
+  stream: StreamRecord | null;
+  ads: OverlayActiveAd[];
 }
 
 export interface DexPair {

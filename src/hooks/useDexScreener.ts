@@ -59,13 +59,15 @@ export function useDexScreener(tokenAddress: string, chain = 'solana') {
     }
 
     try {
-      const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`, {
+      setState((current) => ({ ...current, loading: true, error: null }));
+      const response = await fetch(`/api/dex/pair?chain=${encodeURIComponent(chain)}&token=${encodeURIComponent(tokenAddress)}`, {
         cache: 'no-store',
       });
-      const json = (await response.json()) as { pairs?: DexPairSnapshot[] };
-      const pair = (json.pairs || []).find((candidate) =>
-        chain ? candidate.pairAddress && true : true,
-      ) || json.pairs?.[0] || null;
+      if (!response.ok) {
+        throw new Error('Pair lookup failed.');
+      }
+      const json = (await response.json()) as { pair?: DexPairSnapshot };
+      const pair = json.pair ?? null;
 
       setState((current) => ({
         ...current,

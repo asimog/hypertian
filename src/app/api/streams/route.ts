@@ -1,11 +1,31 @@
 import { fail, ok } from '@/lib/http';
+import { DEFAULT_AD_PRICE_SOL } from '@/lib/constants';
+import { assertHttpsUrl, sanitizeOptionalHttpsUrl, streamPlatformSchema } from '@/lib/platform';
 import { requirePrivyUser } from '@/lib/privy';
-import { createStream, getUserByPrivyId } from '@/lib/supabase/queries';
+import { getPumpCreatorWallet } from '@/lib/pump';
+import { createStream, getUserByPrivyId, listPublicStreams } from '@/lib/supabase/queries';
 import { z } from 'zod';
 
 const schema = z.object({
-  platform: z.enum(['x', 'youtube', 'twitch', 'pump']),
+  platform: streamPlatformSchema,
+  displayName: z.string().min(1).max(80),
+  profileUrl: z.string().min(1),
+  streamUrl: z.string().min(1),
+  payoutWallet: z.string().min(32),
+  priceSol: z.number().positive().max(100).default(DEFAULT_AD_PRICE_SOL),
+  defaultBannerUrl: z.string().optional().nullable(),
+  pumpMint: z.string().optional().nullable(),
+  pumpDeployerWallet: z.string().optional().nullable(),
 });
+
+export async function GET() {
+  try {
+    const streams = await listPublicStreams();
+    return ok({ streams });
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : 'Failed to load streams.');
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -16,9 +36,37 @@ export async function POST(request: Request) {
       return fail('User must be synced before creating a stream.', 403);
     }
 
+    const profileUrl = assertHttpsUrl(body.profileUrl, 'Profile URL');
+    const streamUrl = assertHttpsUrl(body.streamUrl, 'Stream URL');
+    const defaultBannerUrl = sanitizeOptionalHttpsUrl(body.defaultBannerUrl, 'Default banner URL');
+    let pumpDeployerWallet = body.platform === 'pump' ? body.pumpDeployerWallet || body.payoutWallet : body.pumpDeployerWallet;
+    let pumpCreatorVerified = false;
+    if (body.platform === 'pump' && body.pumpMint) {
+      const creatorWallet = await getPumpCreatorWallet(body.pumpMint);
+      if (!creatorWallet) {
+        return fail('Could not verify Pump creator wallet for that mint.');
+      }
+      if (pumpDeployerWallet && creatorWallet !== pumpDeployerWallet) {
+        return fail('Pump deployer wallet does not match the token creator.');
+      }
+      pumpDeployerWallet = creatorWallet;
+      pumpCreatorVerified = true;
+    } else if (body.platform === 'pump') {
+      pumpCreatorVerified = Boolean(pumpDeployerWallet);
+    }
+
     const stream = await createStream({
       userId: user.id,
       platform: body.platform,
+      displayName: body.displayName,
+      profileUrl,
+      streamUrl,
+      payoutWallet: body.payoutWallet,
+      priceSol: body.priceSol,
+      defaultBannerUrl,
+      pumpMint: body.platform === 'pump' ? body.pumpMint ?? null : null,
+      pumpDeployerWallet: body.platform === 'pump' ? pumpDeployerWallet ?? null : null,
+      pumpCreatorVerified,
     });
 
     return ok({ stream });

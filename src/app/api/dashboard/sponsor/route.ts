@@ -1,7 +1,8 @@
 import { fail, ok } from '@/lib/http';
 import { requirePrivyUser } from '@/lib/privy';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getUserByPrivyId } from '@/lib/supabase/queries';
+import { getUserByPrivyId, sortStreamsByBookingPriority } from '@/lib/supabase/queries';
+import { StreamRecord } from '@/lib/types';
 
 export async function GET() {
   try {
@@ -26,7 +27,7 @@ export async function GET() {
     }
 
     return ok({
-      streams: streamsRes.data ?? [],
+      streams: sortStreamsByBookingPriority((streamsRes.data ?? []) as StreamRecord[]),
       ads: adsRes.data ?? [],
     });
   } catch (error) {

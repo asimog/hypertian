@@ -1,54 +1,29 @@
 import { fail, ok } from '@/lib/http';
-import { getSolanaDepositPaymentStatus } from '@/lib/solana';
-import { getPaymentWithAd, verifyPayment } from '@/lib/supabase/queries';
+import { verifyDirectPaymentForAd } from '@/lib/supabase/queries';
 import { z } from 'zod';
 
 const schema = z.object({
-  paymentId: z.string().min(1),
+  paymentId: z.string().min(1).optional(),
+  adId: z.string().min(1).optional(),
+  txSignature: z.string().min(32),
+}).refine((value) => value.paymentId || value.adId, {
+  message: 'paymentId or adId is required.',
 });
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
     const body = schema.parse(await request.json());
-    const payment = await getPaymentWithAd(body.paymentId);
-    if (!payment) {
-      return fail('Payment not found.', 404);
-    }
-
-    if (payment.status === 'verified') {
-      return ok({
-        payment,
-        status: 'verified',
-      });
-    }
-
-    if (!payment.deposit_address) {
-      return fail('Payment is missing a deposit address.', 400);
-    }
-
-    const status = await getSolanaDepositPaymentStatus({
-      depositAddress: payment.deposit_address,
-      amount: Number(payment.amount),
-      currency: payment.currency,
-    });
-
-    if (!status.verified) {
-      return ok({
-        payment,
-        status: 'pending',
-        amountReceived: status.amountReceived,
-      });
-    }
-
-    const verified = await verifyPayment({
-      paymentId: body.paymentId,
-      txHash: status.txHash || payment.tx_hash || payment.deposit_address,
-    });
+    const result = await verifyDirectPaymentForAd(body);
 
     return ok({
-      payment: verified,
-      status: 'verified',
-      amountReceived: status.amountReceived,
+      payment: result.payment,
+      ad: result.ad,
+      status: result.status,
+      amountReceived: result.amountReceived,
+      reason: 'reason' in result ? result.reason : null,
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Failed to verify payment.', 400);

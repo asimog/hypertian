@@ -7,3 +7,4 @@ coverage
 apphosting.local.yaml
 *.tsbuildinfo
 firebase-debug.log
+.vercel

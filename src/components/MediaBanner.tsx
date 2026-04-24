@@ -9,13 +9,7 @@ interface MediaBannerProps {
 
 export default function MediaBanner({ src, type, title = 'Approved Media Banner' }: MediaBannerProps) {
   if (!src || !type) {
-    return (
-      <div className="flex h-56 w-80 items-center justify-center rounded-[24px] border border-white/10 bg-zinc-950/90 text-center text-sm text-zinc-400 backdrop-blur-xl">
-        {title}
-        <br />
-        (Image / GIF / Video)
-      </div>
-    );
+    return null;
   }
 
   if (type === 'video') {
