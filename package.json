@@ -6,8 +6,10 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "prebuild": "node scripts/quiet-bigint-buffer.js",
+    "build": "node scripts/next-build.js",
     "start": "next start",
+    "postinstall": "node scripts/quiet-bigint-buffer.js",
     "lint": "eslint .",
     "pipeline": "npm run lint && npm run typecheck && npm run test",
     "test": "vitest run",
