@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import { LoaderCircle, WalletCards } from 'lucide-react';
 import { MetricCard } from '@/components/app-shell';
 import { CopyButton } from '@/components/copy-button';
+import { SyncUser } from '@/components/sync-user';
 import { DEFAULT_AD_PRICE_SOL, STREAM_PLATFORM_NAMES } from '@/lib/constants';
+import { isPrivyEnabled } from '@/lib/env';
 import { isFreshHeartbeat } from '@/lib/platform';
 import { AdRecord, StreamRecord } from '@/lib/types';
 
@@ -22,6 +25,13 @@ interface PendingPayment {
   durationMinutes: number;
 }
 
+type SponsorDashboardContentProps = {
+  authenticated: boolean;
+  getAccessToken?: () => Promise<string | null>;
+  initialStreams: StreamRecord[];
+  initialAds: AdRecord[];
+};
+
 export function SponsorDashboard({
   streams,
   ads,
@@ -29,19 +39,23 @@ export function SponsorDashboard({
   streams: StreamRecord[];
   ads: AdRecord[];
 }) {
-  return <SponsorDashboardContent initialAds={ads} initialStreams={streams} />;
+  if (!isPrivyEnabled()) {
+    return <SponsorDashboardContent authenticated={false} initialAds={ads} initialStreams={streams} />;
+  }
+
+  return <PrivySponsorDashboard initialAds={ads} initialStreams={streams} />;
 }
 
 function SponsorDashboardContent({
+  authenticated,
+  getAccessToken,
   initialStreams,
   initialAds,
-}: {
-  initialStreams: StreamRecord[];
-  initialAds: AdRecord[];
-}) {
+}: SponsorDashboardContentProps) {
   const panelClassName = 'panel rounded-[32px] p-6';
   const fieldClassName = 'field';
   const [streams, setStreams] = useState(initialStreams);
+  const [myAds, setMyAds] = useState(initialAds);
   const [selectedStreamId, setSelectedStreamId] = useState(initialStreams[0]?.id || '');
   const [adType, setAdType] = useState<'chart' | 'banner'>('chart');
   const [tokenAddress, setTokenAddress] = useState('');
@@ -91,9 +105,13 @@ function SponsorDashboardContent({
     setCreatedPayment(null);
 
     try {
+      const accessToken = await getAccessToken?.();
       const response = await fetch('/api/ads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           streamId: selectedStreamId,
           adType,
@@ -113,6 +131,9 @@ function SponsorDashboardContent({
 
       setCreatedPayment(json);
       setPaymentState('pending');
+      if (authenticated) {
+        setMyAds((current) => [json.ad, ...current]);
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to create ad checkout.');
     } finally {
@@ -199,7 +220,7 @@ function SponsorDashboardContent({
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard icon="stream" label="Directory" value={String(streams.length)} hint="Open stream inventory. Sponsors can browse without login." />
         <MetricCard icon="activity" label="Ad types" value="Chart + Banner" hint="Chart ads activate after payment. Banner ads also require creator approval." />
-        <MetricCard icon="wallet" label="Starting rate" value={`${DEFAULT_AD_PRICE_SOL} SOL`} hint="Final routing depends on the stream and ad type." />
+        <MetricCard icon="wallet" label="Your campaigns" value={String(myAds.length)} hint={authenticated ? 'Signed-in sponsors can track recent campaign checkouts.' : `Starting rate ${DEFAULT_AD_PRICE_SOL} SOL`} />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -398,10 +419,82 @@ function SponsorDashboardContent({
                 </div>
               </div>
             ) : null}
-            {initialAds.length ? <div className="status-note">{initialAds.length} previous campaigns loaded.</div> : null}
           </div>
         </div>
       </section>
+
+      {authenticated ? (
+        <section className={panelClassName}>
+          <div className="section-kicker text-[var(--color-copy)]">Your recent campaigns</div>
+          <h2 className="section-heading">Signed-in sponsor history</h2>
+          <p className="section-copy">
+            Campaigns created while signed in are attributed to your sponsor profile so you can review status and follow-up details later.
+          </p>
+          <div className="mt-4 grid gap-4">
+            {myAds.map((ad) => (
+              <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-5" key={ad.id}>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-white">{ad.ad_type === 'banner' ? 'Banner campaign' : 'Chart campaign'}</h3>
+                    <p className="mt-1 text-sm text-[var(--color-copy-soft)]">
+                      {ad.status || 'pending'} · {ad.chain} · {ad.position} · {ad.size}
+                    </p>
+                  </div>
+                  <div className="pill">{ad.id.slice(0, 8)}</div>
+                </div>
+                {ad.banner_url ? <div className="mt-3 break-all text-xs text-[var(--color-accent)]">{ad.banner_url}</div> : null}
+                {ad.token_address ? <div className="mt-3 break-all font-mono text-xs text-[var(--color-accent)]">{ad.token_address}</div> : null}
+              </article>
+            ))}
+            {!myAds.length ? <div className="status-note">No attributed campaigns yet. Create a checkout while signed in to populate this list.</div> : null}
+          </div>
+        </section>
+      ) : null}
     </div>
+  );
+}
+
+function PrivySponsorDashboard({
+  initialStreams,
+  initialAds,
+}: {
+  initialStreams: StreamRecord[];
+  initialAds: AdRecord[];
+}) {
+  const { authenticated, getAccessToken, ready } = usePrivy();
+  const [ads, setAds] = useState(initialAds);
+
+  useEffect(() => {
+    async function loadSponsorDashboard() {
+      if (!ready || !authenticated) {
+        return;
+      }
+
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        return;
+      }
+
+      const response = await fetch('/api/dashboard/sponsor', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (!response.ok) {
+        return;
+      }
+
+      const json = (await response.json()) as { ads?: AdRecord[] };
+      setAds(json.ads ?? []);
+    }
+
+    void loadSponsorDashboard();
+  }, [authenticated, getAccessToken, ready]);
+
+  return (
+    <>
+      {authenticated ? <SyncUser role="sponsor" /> : null}
+      <SponsorDashboardContent authenticated={authenticated} getAccessToken={getAccessToken} initialAds={ads} initialStreams={initialStreams} />
+    </>
   );
 }

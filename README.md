@@ -29,9 +29,11 @@ The repo is already past prototype stage. The core runtime is present and wired:
 A few important realities from the current code:
 
 - the README that shipped with the repo was stale
-- `youtube` and `twitch` still appear in some types and old text, but there are no live `/youtube-overlay` or `/twitch-overlay` routes in `src/app`
-- `DEXSCREENER_WS_URL` exists in env parsing, but the current client hook opens a hard-coded DexScreener WebSocket URL and does not read that env var
-- media upload review endpoints currently return `410` and the active banner flow expects an HTTPS banner URL instead
+- the product surface is now intentionally limited to `X Ads` and `PumpAds`
+- overlays now use signed heartbeat keys instead of unauthenticated pings
+- payment verification returns a minimal public status payload instead of raw payment rows
+- escrow-style deposit keys are encrypted at rest and verified escrow balances are swept automatically
+- the active banner flow expects an HTTPS banner URL, while Filebase support remains optional through presigned upload URLs
 
 ## Current Routes
 
@@ -60,12 +62,6 @@ A few important realities from the current code:
 - `GET /api/dex/pair`
 - `GET /api/cron/payments`
 - `POST /api/filebase/upload-url`
-
-Disabled at the moment:
-
-- `POST /api/media-jobs/upload`
-- `POST /api/media-jobs/complete`
-- `POST /api/media-jobs/review`
 
 ## Stack
 
@@ -102,7 +98,8 @@ PRIVY_VERIFICATION_KEY=
 NEXT_PUBLIC_SOLANA_RPC_URL=
 NEXT_PUBLIC_SITE_URL=
 CRON_SECRET=
-DEXSCREENER_WS_URL=
+OVERLAY_SIGNING_SECRET=
+ESCROW_ENCRYPTION_SECRET=
 FILEBASE_ACCESS_KEY_ID=
 FILEBASE_SECRET_ACCESS_KEY=
 FILEBASE_BUCKET=
@@ -124,7 +121,8 @@ NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL=
 | `HELIUS_RPC_URL` | Strongly recommended | Preferred Solana RPC endpoint for payment verification | Helius dashboard. Create an endpoint in the Endpoints section and copy its URL. |
 | `NEXT_PUBLIC_SOLANA_RPC_URL` | Optional fallback | Client-side/public fallback RPC URL | Your chosen Solana RPC provider. Can also be another Helius endpoint if you want a public read URL. |
 | `CRON_SECRET` | Optional | Protects `GET /api/cron/payments` | Generate it yourself with `openssl rand -hex 32` or an equivalent secret generator. |
-| `DEXSCREENER_WS_URL` | Optional, not currently wired | Reserved for future/custom DexScreener WebSocket configuration | Leave unset unless you intentionally patch the client to consume it. |
+| `OVERLAY_SIGNING_SECRET` | Optional but recommended | Signs per-stream overlay heartbeat keys | Generate it yourself with `openssl rand -hex 32`. If omitted, the app falls back to `SUPABASE_SERVICE_ROLE_KEY`, but a dedicated secret is better. |
+| `ESCROW_ENCRYPTION_SECRET` | Optional but recommended | Encrypts escrow deposit secrets before they are stored | Generate it yourself with `openssl rand -hex 32`. If omitted, the app falls back to an existing server secret, but a dedicated secret is better. |
 | `FILEBASE_ACCESS_KEY_ID` | Optional | Enables presigned upload URLs for Filebase-backed banner uploads | Filebase account credentials dashboard. |
 | `FILEBASE_SECRET_ACCESS_KEY` | Optional | Secret half of Filebase S3 credentials | Filebase account credentials dashboard. |
 | `FILEBASE_BUCKET` | Optional | Target Filebase bucket for uploads | A bucket you create in Filebase. |
@@ -195,7 +193,8 @@ npm run pipeline
 1. A user authenticates with Privy.
 2. The frontend syncs the user through `POST /api/auth/sync`.
 3. The creator registers a stream through `POST /api/streams`.
-4. The overlay can heartbeat through `POST /api/streams/heartbeat`.
+4. The app returns a signed overlay URL for that stream.
+5. The overlay heartbeats through `POST /api/streams/heartbeat` with its signed key.
 
 ### Sponsor flow
 
@@ -203,13 +202,16 @@ npm run pipeline
 2. `POST /api/ads` validates the token or banner input and creates the ad plus payment record.
 3. The sponsor sends SOL to the returned deposit address.
 4. `POST /api/payments/verify` verifies the transaction signature on Solana.
-5. Chart ads can activate immediately after payment verification.
-6. Banner ads move to streamer approval and are finalized through `POST /api/ads/review`.
+5. If the payment used an escrow deposit address, the backend sweeps the verified balance automatically.
+6. Chart ads can activate immediately after payment verification.
+7. Banner ads move to streamer approval and are finalized through `POST /api/ads/review`.
 
 ### Payment routing
 
 - non-banner, non-Pump ads can route directly to the streamer wallet
 - banner ads use escrow-style generated deposit addresses
+- escrow deposit secrets are encrypted at rest
+- verified escrow balances are swept automatically after verification
 - Pump ads apply a platform commission and require `NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA`
 
 ## Verification
@@ -226,6 +228,7 @@ npm run build
 - Vercel deployment is supported by `vercel.json`
 - `GET /api/cron/payments` is protected by `Authorization: Bearer $CRON_SECRET`
 - `HELIUS_RPC_URL` should be treated as the production RPC for payment verification
+- `OVERLAY_SIGNING_SECRET` and `ESCROW_ENCRYPTION_SECRET` should be set explicitly in production
 - Filebase uploads are optional and separate from the default HTTPS banner URL flow
 
 ## Extra Docs

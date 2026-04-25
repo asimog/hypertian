@@ -9,12 +9,13 @@ import { CopyButton } from '@/components/copy-button';
 import { DEFAULT_AD_PRICE_SOL, STREAM_PLATFORM_NAMES } from '@/lib/constants';
 import { isPrivyEnabled } from '@/lib/env';
 import { isFreshHeartbeat } from '@/lib/platform';
-import { AdRecord, MediaJobRecord, StreamPlatform, StreamRecord } from '@/lib/types';
+import { AdRecord, StreamPlatform, StreamRecord } from '@/lib/types';
+
+type StreamerStream = StreamRecord & { overlayUrl?: string };
 
 type StreamerDashboardProps = {
-  initialStreams: StreamRecord[];
+  initialStreams: StreamerStream[];
   initialAds: AdRecord[];
-  initialMediaJobs: MediaJobRecord[];
 };
 
 function StreamerDashboardContent({
@@ -30,7 +31,6 @@ function StreamerDashboardContent({
 }) {
   const panelClassName = 'panel rounded-[32px] p-6';
   const fieldClassName = 'field';
-  const baseUrl = typeof window === 'undefined' ? 'http://localhost:3000' : window.location.origin;
   const [streams, setStreams] = useState(initialStreams);
   const [ads, setAds] = useState(initialAds);
   const [platform, setPlatform] = useState<StreamPlatform>('x');
@@ -66,7 +66,7 @@ function StreamerDashboardContent({
         if (!response.ok) {
           return;
         }
-        const json = (await response.json()) as { streams?: StreamRecord[]; ads?: AdRecord[] };
+        const json = (await response.json()) as { streams?: StreamerStream[]; ads?: AdRecord[] };
         setStreams(json.streams ?? []);
         setAds(json.ads ?? []);
       } finally {
@@ -109,11 +109,11 @@ function StreamerDashboardContent({
           pumpDeployerWallet: platform === 'pump' ? pumpDeployerWallet || payoutWallet : null,
         }),
       });
-      const json = (await response.json()) as { stream?: StreamRecord; error?: string };
+      const json = (await response.json()) as { stream?: StreamRecord; overlayUrl?: string; error?: string };
       if (!response.ok || !json.stream) {
         throw new Error(json.error || 'Failed to create stream.');
       }
-      setStreams((current) => [json.stream!, ...current]);
+      setStreams((current) => [{ ...json.stream!, overlayUrl: json.overlayUrl ?? undefined }, ...current]);
       setDisplayName('');
       setProfileUrl('');
       setStreamUrl('');
@@ -237,7 +237,7 @@ function StreamerDashboardContent({
               </div>
             ) : null}
             {streams.map((stream) => {
-              const overlayUrl = `${baseUrl}/overlay/${stream.id}`;
+              const overlayUrl = stream.overlayUrl || '';
               return (
                 <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-5" key={stream.id}>
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -256,7 +256,7 @@ function StreamerDashboardContent({
                     </div>
                   </dl>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <CopyButton className="secondary-button" label="Copy overlay URL" value={overlayUrl} />
+                    {overlayUrl ? <CopyButton className="secondary-button" label="Copy overlay URL" value={overlayUrl} /> : null}
                     {stream.stream_url ? (
                       <a className="secondary-button" href={stream.stream_url} rel="noreferrer" target="_blank">
                         Open live URL

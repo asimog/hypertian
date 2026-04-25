@@ -3,11 +3,11 @@ import { assertHttpsUrl, isFreshHeartbeat, streamPlatformSchema } from '../src/l
 
 describe('platform helpers', () => {
   it('supports all v1 livestream platforms', () => {
-    expect(['x', 'pump', 'kick'].map((platform) => streamPlatformSchema.parse(platform))).toEqual([
+    expect(['x', 'pump'].map((platform) => streamPlatformSchema.parse(platform))).toEqual([
       'x',
       'pump',
-      'kick',
     ]);
+    expect(() => streamPlatformSchema.parse('kick')).toThrow();
     expect(() => streamPlatformSchema.parse('twitch')).toThrow();
     expect(() => streamPlatformSchema.parse('youtube')).toThrow();
   });

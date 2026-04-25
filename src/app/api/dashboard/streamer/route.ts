@@ -1,6 +1,8 @@
 import { fail, ok } from '@/lib/http';
+import { createOverlayHeartbeatKey } from '@/lib/overlay-auth';
 import { requirePrivyUser } from '@/lib/privy';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getSiteUrl } from '@/lib/env';
 import { getUserByPrivyId, listAdsForStreamer, sortStreamsByBookingPriority } from '@/lib/supabase/queries';
 import { StreamRecord } from '@/lib/types';
 
@@ -23,8 +25,14 @@ export async function GET() {
       throw streamsRes.error;
     }
 
+    const baseUrl = getSiteUrl();
+    const streams = sortStreamsByBookingPriority((streamsRes.data ?? []) as StreamRecord[]).map((stream) => ({
+      ...stream,
+      overlayUrl: `${baseUrl}/overlay/${stream.id}?key=${createOverlayHeartbeatKey(stream.id)}`,
+    }));
+
     return ok({
-      streams: sortStreamsByBookingPriority((streamsRes.data ?? []) as StreamRecord[]),
+      streams,
       ads,
       mediaJobs: [],
     });

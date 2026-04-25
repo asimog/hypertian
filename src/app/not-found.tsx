@@ -8,7 +8,7 @@ export default function NotFound() {
         This lane does not exist.
       </h1>
       <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--color-copy-soft)]">
-        The page you asked for is not available. Return to Hypertian and choose PumpFun, X, or Kick inventory.
+        The page you asked for is not available. Return to Hypertian and choose X Ads or PumpAds inventory.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <Link className="primary-button" href="/">

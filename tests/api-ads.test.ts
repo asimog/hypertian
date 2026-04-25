@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   getPairsByTokenAddress: vi.fn(),
   createAdWithDirectPayment: vi.fn(),
   getStreamById: vi.fn(),
+  getUserByPrivyId: vi.fn(),
+  getOptionalPrivyUser: vi.fn(),
   listActiveAdsForStream: vi.fn(),
 }));
 
@@ -11,9 +13,14 @@ vi.mock('@/lib/dexscreener', () => ({
   getPairsByTokenAddress: mocks.getPairsByTokenAddress,
 }));
 
+vi.mock('@/lib/privy', () => ({
+  getOptionalPrivyUser: mocks.getOptionalPrivyUser,
+}));
+
 vi.mock('@/lib/supabase/queries', () => ({
   createAdWithDirectPayment: mocks.createAdWithDirectPayment,
   getStreamById: mocks.getStreamById,
+  getUserByPrivyId: mocks.getUserByPrivyId,
   listActiveAdsForStream: mocks.listActiveAdsForStream,
 }));
 
@@ -30,6 +37,8 @@ function jsonRequest(body: unknown) {
 describe('/api/ads', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getOptionalPrivyUser.mockResolvedValue(null);
+    mocks.getUserByPrivyId.mockResolvedValue(null);
   });
 
   it('creates public chart checkouts without advertiser auth', async () => {
@@ -161,6 +170,53 @@ describe('/api/ads', () => {
       paidToWallet: 'streamer-wallet',
       commissionBps: 0,
     });
+  });
+
+  it('attributes ad creation to the signed-in sponsor when auth is present', async () => {
+    mocks.getPairsByTokenAddress.mockResolvedValue([{ pairAddress: 'pair-1' }]);
+    mocks.getOptionalPrivyUser.mockResolvedValue({ user_id: 'privy-user-1' });
+    mocks.getUserByPrivyId.mockResolvedValue({ id: 'user-1', wallet_address: 'wallet-1' });
+    mocks.createAdWithDirectPayment.mockResolvedValue({
+      ad: { id: 'ad-1', ad_type: 'chart' },
+      payment: { id: 'payment-1', currency: 'SOL', deposit_address: 'streamer-wallet' },
+      stream: { payout_wallet: 'streamer-wallet' },
+      amount: 0.001,
+      durationMinutes: 5,
+      paymentRoute: {
+        recipientKind: 'streamer_direct',
+        paidToWallet: 'streamer-wallet',
+        commissionBps: 0,
+        platformFeeAmount: 0,
+        streamerAmount: 0.001,
+        platformTreasuryWallet: null,
+      },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/ads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer token',
+        },
+        body: JSON.stringify({
+          streamId: 'stream-1',
+          adType: 'chart',
+          tokenAddress: 'So11111111111111111111111111111111111111112',
+          chain: 'solana',
+          position: 'bottom-right',
+          size: 'medium',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdWithDirectPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sponsorId: 'user-1',
+        sponsorWallet: 'wallet-1',
+      }),
+    );
   });
 
   it('maps approved banner ads to overlay media URLs', async () => {

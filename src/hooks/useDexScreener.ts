@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export interface DexPairSnapshot {
   priceUsd?: number;
@@ -29,6 +29,8 @@ export interface DexScreenerState {
   error: string | null;
 }
 
+const POLL_INTERVAL_MS = 15_000;
+
 export function useDexScreener(tokenAddress: string, chain = 'solana') {
   const [state, setState] = useState<DexScreenerState>({
     data: null,
@@ -36,8 +38,6 @@ export function useDexScreener(tokenAddress: string, chain = 'solana') {
     loading: true,
     error: null,
   });
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const appendPoint = useCallback((price: number) => {
     setState((current) => ({
@@ -52,20 +52,21 @@ export function useDexScreener(tokenAddress: string, chain = 'solana') {
     }));
   }, []);
 
-  const fetchInitial = useCallback(async () => {
+  const fetchPair = useCallback(async () => {
     if (!tokenAddress) {
       setState((current) => ({ ...current, loading: false, error: 'Missing token address.' }));
       return;
     }
 
     try {
-      setState((current) => ({ ...current, loading: true, error: null }));
+      setState((current) => ({ ...current, loading: current.data ? current.loading : true, error: null }));
       const response = await fetch(`/api/dex/pair?chain=${encodeURIComponent(chain)}&token=${encodeURIComponent(tokenAddress)}`, {
         cache: 'no-store',
       });
       if (!response.ok) {
         throw new Error('Pair lookup failed.');
       }
+
       const json = (await response.json()) as { pair?: DexPairSnapshot };
       const pair = json.pair ?? null;
 
@@ -89,76 +90,19 @@ export function useDexScreener(tokenAddress: string, chain = 'solana') {
   }, [appendPoint, chain, tokenAddress]);
 
   useEffect(() => {
-    let active = true;
+    void fetchPair();
+    if (!tokenAddress) {
+      return;
+    }
 
-    const connect = () => {
-      if (!active || !tokenAddress) {
-        return;
-      }
-
-      try {
-        const ws = new WebSocket('wss://api.dexscreener.com/token-profiles/latest/v1');
-        wsRef.current = ws;
-
-        ws.onmessage = (event) => {
-          try {
-            const update = JSON.parse(event.data) as {
-              token?: { address?: string };
-              priceUsd?: number;
-              volume?: { h24?: number };
-              liquidity?: { usd?: number };
-              priceChange?: { h24?: number };
-            };
-
-            if (update?.token?.address?.toLowerCase() !== tokenAddress.toLowerCase()) {
-              return;
-            }
-
-            setState((current) => ({
-              ...current,
-              data: {
-                ...current.data,
-                ...update,
-              },
-              error: null,
-            }));
-
-            if (update.priceUsd) {
-              appendPoint(Number(update.priceUsd));
-            }
-          } catch {
-            // Ignore malformed frames and keep the connection alive.
-          }
-        };
-
-        ws.onerror = () => {
-          if (active) {
-            setState((current) => ({ ...current, error: 'DexScreener WebSocket error.' }));
-          }
-        };
-
-        ws.onclose = () => {
-          if (!active) {
-            return;
-          }
-          reconnectTimerRef.current = setTimeout(connect, 3000);
-        };
-      } catch {
-        reconnectTimerRef.current = setTimeout(connect, 3000);
-      }
-    };
-
-    void fetchInitial();
-    connect();
+    const interval = window.setInterval(() => {
+      void fetchPair();
+    }, POLL_INTERVAL_MS);
 
     return () => {
-      active = false;
-      wsRef.current?.close();
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current);
-      }
+      window.clearInterval(interval);
     };
-  }, [appendPoint, fetchInitial, tokenAddress]);
+  }, [fetchPair, tokenAddress]);
 
   return useMemo(() => state, [state]);
 }

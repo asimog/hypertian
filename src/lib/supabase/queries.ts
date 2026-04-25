@@ -4,13 +4,14 @@ import { getBannerReviewState, getPaidAdActivationState } from '@/lib/ad-state';
 import { DEFAULT_AD_DURATION_MINUTES, DEFAULT_AD_PRICE_SOL, STREAM_PLATFORM_PRIORITY } from '@/lib/constants';
 import { getServerEnv, isSupabaseAdminEnabled } from '@/lib/env';
 import { getPaymentRoute } from '@/lib/payment-routing';
-import { generateSolanaDepositAccount, verifyDirectSolPayment } from '@/lib/solana';
+import { generateSolanaDepositAccount, sweepEscrowBalance, verifyDirectSolPayment } from '@/lib/solana';
 import {
   AdRecord,
   AdStatus,
   AdType,
   AppUser,
   PaymentRecord,
+  PublicPaymentStatus,
   StreamPlatform,
   StreamRecord,
   UserRole,
@@ -281,6 +282,8 @@ export async function createAdWithPayment(input: {
 export async function createAdWithDirectPayment(input: {
   streamId: string;
   adType: AdType;
+  sponsorId?: string | null;
+  sponsorWallet?: string | null;
   tokenAddress?: string | null;
   chain?: string | null;
   dexPairAddress?: string | null;
@@ -316,6 +319,8 @@ export async function createAdWithDirectPayment(input: {
     .from('ads')
     .insert({
       stream_id: input.streamId,
+      sponsor_id: input.sponsorId ?? null,
+      sponsor_wallet: input.sponsorWallet ?? null,
       ad_type: input.adType,
       status: 'pending_payment',
       token_address: input.tokenAddress ?? '',
@@ -382,6 +387,11 @@ export async function verifyDirectPaymentForAd(input: {
   if (!payment.deposit_address) {
     throw new Error('Payment recipient is missing.');
   }
+
+  if (!input.paymentId && !input.adId) {
+    throw new Error('paymentId or adId is required.');
+  }
+
   if (payment.status === 'verified' || ad.status === 'active' || ad.status === 'pending_streamer_approval') {
     return {
       payment,
@@ -407,6 +417,22 @@ export async function verifyDirectPaymentForAd(input: {
       amountReceived: status.amountReceived,
       reason: status.reason,
     };
+  }
+
+  let sweep = null;
+  if (payment.payment_recipient_kind === 'escrow' && payment.deposit_secret && ad.paid_to_wallet) {
+    sweep = await sweepEscrowBalance({
+      depositAddress: payment.deposit_address,
+      encryptedSecret: payment.deposit_secret,
+      streamerWallet: ad.paid_to_wallet,
+      platformTreasuryWallet: payment.platform_treasury_wallet ?? null,
+      expectedStreamerAmount: Number(payment.streamer_amount ?? payment.amount),
+      expectedPlatformFeeAmount: Number(payment.platform_fee_amount ?? 0),
+    });
+
+    if (!sweep.swept) {
+      throw new Error(sweep.reason);
+    }
   }
 
   const now = new Date();
@@ -454,6 +480,24 @@ export async function verifyDirectPaymentForAd(input: {
     ad: updatedAd,
     status: activation.status,
     amountReceived: status.amountReceived,
+    sweepTxHash: sweep?.txHash ?? null,
+  };
+}
+
+export function toPublicPaymentStatus(payment: PaymentRecord): PublicPaymentStatus {
+  return {
+    id: payment.id,
+    amount: payment.amount,
+    currency: payment.currency,
+    status: payment.status,
+    deposit_address: payment.deposit_address,
+    payment_recipient_kind: payment.payment_recipient_kind ?? null,
+    commission_bps: payment.commission_bps ?? null,
+    platform_fee_amount: payment.platform_fee_amount ?? null,
+    streamer_amount: payment.streamer_amount ?? null,
+    platform_treasury_wallet: payment.platform_treasury_wallet ?? null,
+    verified_at: payment.verified_at,
+    created_at: payment.created_at,
   };
 }
 

@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   verifyDirectPaymentForAd: vi.fn(),
+  toPublicPaymentStatus: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/queries', () => ({
   verifyDirectPaymentForAd: mocks.verifyDirectPaymentForAd,
+  toPublicPaymentStatus: mocks.toPublicPaymentStatus,
 }));
 
 const { POST } = await import('../src/app/api/payments/verify/route');
@@ -21,6 +23,7 @@ function jsonRequest(body: unknown) {
 describe('/api/payments/verify', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.toPublicPaymentStatus.mockImplementation(({ deposit_secret, ...payment }) => payment);
   });
 
   it('requires a submitted transaction signature', async () => {
@@ -43,7 +46,16 @@ describe('/api/payments/verify', () => {
 
   it('returns active status for verified chart payments', async () => {
     mocks.verifyDirectPaymentForAd.mockResolvedValue({
-      payment: { id: 'payment-1' },
+      payment: {
+        id: 'payment-1',
+        amount: 0.001,
+        currency: 'SOL',
+        status: 'verified',
+        deposit_address: 'wallet',
+        deposit_secret: 'secret',
+        verified_at: null,
+        created_at: 'now',
+      },
       ad: { id: 'ad-1', status: 'active' },
       status: 'active',
       amountReceived: 0.001,
@@ -63,9 +75,16 @@ describe('/api/payments/verify', () => {
       txSignature: 'x'.repeat(88),
     });
     expect(json).toMatchObject({
+      payment: {
+        id: 'payment-1',
+      },
+      ad: {
+        id: 'ad-1',
+      },
       status: 'active',
       amountReceived: 0.001,
       reason: null,
     });
+    expect(JSON.stringify(json)).not.toContain('deposit_secret');
   });
 });

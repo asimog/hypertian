@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { STREAM_HEARTBEAT_STALE_MS } from '@/lib/constants';
 
-export const streamPlatformSchema = z.enum(['x', 'pump', 'kick']);
+export const streamPlatformSchema = z.enum(['x', 'pump']);
 export const adTypeSchema = z.enum(['chart', 'banner']);
 export const adStatusSchema = z.enum([
   'pending_payment',

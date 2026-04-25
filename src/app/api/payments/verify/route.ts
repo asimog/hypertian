@@ -1,5 +1,5 @@
 import { fail, ok } from '@/lib/http';
-import { verifyDirectPaymentForAd } from '@/lib/supabase/queries';
+import { toPublicPaymentStatus, verifyDirectPaymentForAd } from '@/lib/supabase/queries';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -19,10 +19,17 @@ export async function POST(request: Request) {
     const result = await verifyDirectPaymentForAd(body);
 
     return ok({
-      payment: result.payment,
-      ad: result.ad,
+      payment: toPublicPaymentStatus(result.payment),
+      ad: {
+        id: result.ad.id,
+        status: result.ad.status,
+        adType: result.ad.ad_type,
+        isActive: result.ad.is_active,
+        expiresAt: result.ad.expires_at,
+      },
       status: result.status,
       amountReceived: result.amountReceived,
+      sweepTxHash: 'sweepTxHash' in result ? result.sweepTxHash ?? null : null,
       reason: 'reason' in result ? result.reason : null,
     });
   } catch (error) {

@@ -5,7 +5,7 @@ export type AdPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-righ
 export type AdSize = 'small' | 'medium' | 'large';
 export type OverlayTheme = 'dark' | 'light';
 export type SupportedChain = 'solana' | 'ethereum' | 'base' | 'bsc' | 'arbitrum' | 'polygon';
-export type StreamPlatform = 'x' | 'pump' | 'kick';
+export type StreamPlatform = 'x' | 'pump';
 export type PaymentRecipientKind = 'streamer_direct' | 'escrow';
 export type StreamVerificationStatus = 'unverified' | 'pending' | 'verified';
 export type AdType = 'chart' | 'banner';
@@ -82,20 +82,24 @@ export interface PaymentRecord {
   created_at: string;
 }
 
-export interface MediaJobRecord {
+export interface PublicPaymentStatus {
   id: string;
-  ad_id: string;
-  sponsor_wallet: string | null;
-  media_path: string;
-  media_type: 'image' | 'gif' | 'video' | null;
-  status: 'pending' | 'approved' | 'rejected';
-  reviewed_at: string | null;
+  amount: number;
+  currency: AssetKind;
+  status: string;
+  deposit_address: string | null;
+  payment_recipient_kind?: PaymentRecipientKind | null;
+  commission_bps?: number | null;
+  platform_fee_amount?: number | null;
+  streamer_amount?: number | null;
+  platform_treasury_wallet?: string | null;
+  verified_at: string | null;
   created_at: string;
 }
 
 export interface OverlayActiveAd extends AdRecord {
   media_src: string | null;
-  media_type: MediaJobRecord['media_type'];
+  media_type: 'image' | 'gif' | 'video' | null;
 }
 
 export interface OverlayStreamState {

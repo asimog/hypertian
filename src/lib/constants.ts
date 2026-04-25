@@ -11,11 +11,9 @@ export const STREAM_HEARTBEAT_STALE_MS = 30_000;
 export const STREAM_PLATFORM_NAMES = {
   x: 'X',
   pump: 'PumpFun',
-  kick: 'Kick',
 } as const;
 
 export const STREAM_PLATFORM_PRIORITY = {
   x: 0,
   pump: 1,
-  kick: 2,
 } as const;

@@ -1,7 +1,8 @@
 import 'server-only';
-import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, sendAndConfirmTransaction, SystemProgram, Transaction } from '@solana/web3.js';
 import { getSolanaRpcUrl } from '@/lib/env';
 import { AssetKind } from '@/lib/types';
+import { decryptSecret, encryptSecret } from '@/lib/secrets';
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
@@ -14,8 +15,14 @@ export function generateSolanaDepositAccount() {
 
   return {
     address: keypair.publicKey.toBase58(),
-    secret: JSON.stringify(Array.from(keypair.secretKey)),
+    secret: encryptSecret(JSON.stringify(Array.from(keypair.secretKey))),
   };
+}
+
+function keypairFromEncryptedSecret(secret: string) {
+  const decoded = decryptSecret(secret);
+  const values = JSON.parse(decoded) as number[];
+  return Keypair.fromSecretKey(Uint8Array.from(values));
 }
 
 export async function getSolanaDepositPaymentStatus(input: {
@@ -102,5 +109,97 @@ export async function verifyDirectSolPayment(input: {
       amountReceived + 0.000001 >= input.amount
         ? null
         : `Payment amount is too low. Received ${amountReceived.toFixed(9)} SOL.`,
+  };
+}
+
+export async function sweepEscrowBalance(input: {
+  depositAddress: string;
+  encryptedSecret: string;
+  streamerWallet: string;
+  platformTreasuryWallet?: string | null;
+  expectedStreamerAmount: number;
+  expectedPlatformFeeAmount?: number | null;
+}) {
+  const connection = createSolanaConnection();
+  const source = keypairFromEncryptedSecret(input.encryptedSecret);
+  const sourceAddress = new PublicKey(input.depositAddress);
+  const streamerWallet = new PublicKey(input.streamerWallet);
+  const treasuryWallet = input.platformTreasuryWallet ? new PublicKey(input.platformTreasuryWallet) : null;
+  const currentBalance = await connection.getBalance(sourceAddress, 'confirmed');
+
+  if (currentBalance <= 0) {
+    return {
+      swept: false as const,
+      reason: 'Escrow balance is empty.',
+      txHash: null,
+    };
+  }
+
+  const transaction = new Transaction({ feePayer: source.publicKey });
+  transaction.recentBlockhash = (await connection.getLatestBlockhash('confirmed')).blockhash;
+
+  const expectedPlatformLamports = Math.max(0, Math.round((input.expectedPlatformFeeAmount ?? 0) * LAMPORTS_PER_SOL));
+  const expectedStreamerLamports = Math.max(0, Math.round(input.expectedStreamerAmount * LAMPORTS_PER_SOL));
+
+  const dryRun = new Transaction({ feePayer: source.publicKey });
+  dryRun.recentBlockhash = transaction.recentBlockhash;
+  dryRun.add(SystemProgram.transfer({ fromPubkey: source.publicKey, toPubkey: streamerWallet, lamports: 1 }));
+  if (treasuryWallet && expectedPlatformLamports > 0) {
+    dryRun.add(SystemProgram.transfer({ fromPubkey: source.publicKey, toPubkey: treasuryWallet, lamports: 1 }));
+  }
+
+  const fee = await dryRun.getEstimatedFee(connection);
+  const availableAfterFee = currentBalance - (fee ?? 5_000);
+
+  if (availableAfterFee <= 0) {
+    return {
+      swept: false as const,
+      reason: 'Escrow balance does not cover network fees.',
+      txHash: null,
+    };
+  }
+
+  const platformLamports = treasuryWallet ? Math.min(expectedPlatformLamports, availableAfterFee) : 0;
+  const streamerLamports = Math.max(0, Math.min(expectedStreamerLamports, availableAfterFee - platformLamports));
+  const remainderLamports = Math.max(0, availableAfterFee - platformLamports - streamerLamports);
+  const finalStreamerLamports = streamerLamports + remainderLamports;
+
+  if (finalStreamerLamports > 0) {
+    transaction.add(
+      SystemProgram.transfer({
+        fromPubkey: source.publicKey,
+        toPubkey: streamerWallet,
+        lamports: finalStreamerLamports,
+      }),
+    );
+  }
+
+  if (treasuryWallet && platformLamports > 0) {
+    transaction.add(
+      SystemProgram.transfer({
+        fromPubkey: source.publicKey,
+        toPubkey: treasuryWallet,
+        lamports: platformLamports,
+      }),
+    );
+  }
+
+  if (transaction.instructions.length === 0) {
+    return {
+      swept: false as const,
+      reason: 'No sweep instructions were generated.',
+      txHash: null,
+    };
+  }
+
+  const txHash = await sendAndConfirmTransaction(connection, transaction, [source], {
+    commitment: 'confirmed',
+  });
+
+  return {
+    swept: true as const,
+    txHash,
+    sweptStreamerAmount: finalStreamerLamports / LAMPORTS_PER_SOL,
+    sweptPlatformAmount: platformLamports / LAMPORTS_PER_SOL,
   };
 }

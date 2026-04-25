@@ -1,7 +1,8 @@
 import { getPairsByTokenAddress } from '@/lib/dexscreener';
 import { fail, ok } from '@/lib/http';
 import { adTypeSchema, assertHttpsUrl } from '@/lib/platform';
-import { createAdWithDirectPayment, getStreamById, listActiveAdsForStream } from '@/lib/supabase/queries';
+import { getOptionalPrivyUser } from '@/lib/privy';
+import { createAdWithDirectPayment, getStreamById, getUserByPrivyId, listActiveAdsForStream } from '@/lib/supabase/queries';
 import { AdRecord, OverlayActiveAd } from '@/lib/types';
 import { z } from 'zod';
 
@@ -41,6 +42,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = schema.parse(await request.json());
+    const claims = await getOptionalPrivyUser();
+    const sponsor = claims?.user_id ? await getUserByPrivyId(claims.user_id) : null;
     let dexPairAddress: string | null = null;
     let tokenAddress = body.tokenAddress ?? null;
     let bannerUrl = body.bannerUrl ?? null;
@@ -66,6 +69,8 @@ export async function POST(request: Request) {
     const { ad, payment, amount, durationMinutes, paymentRoute } = await createAdWithDirectPayment({
       streamId: body.streamId,
       adType: body.adType,
+      sponsorId: sponsor?.id ?? null,
+      sponsorWallet: sponsor?.wallet_address ?? null,
       tokenAddress,
       chain: body.chain,
       dexPairAddress,

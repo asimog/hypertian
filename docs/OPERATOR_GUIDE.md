@@ -13,14 +13,16 @@ It focuses on:
 
 ## Current Product Reality
 
-As of April 24, 2026, the current codebase behaves like this:
+As of April 25, 2026, the current codebase behaves like this:
 
 - active creator/sponsor routes exist for `X Ads` and `PumpAds`
 - stream and sponsor dashboards depend on Privy-backed auth
 - payment verification depends on Solana RPC access and Supabase writes
+- overlay liveness now depends on signed per-stream heartbeat keys
+- escrow-style deposit secrets are encrypted at rest
+- verified escrow balances are swept automatically by the backend
 - banner ads currently rely on an HTTPS banner URL plus streamer review
-- media upload endpoints are disabled and return `410`
-- `DEXSCREENER_WS_URL` is parsed from env but is not consumed by the current frontend hook
+- DexScreener client data now uses polling instead of the older websocket path
 
 This matters because some older docs and comments still describe broader or earlier behavior.
 
@@ -53,13 +55,14 @@ HELIUS_RPC_URL=
 PRIVY_VERIFICATION_KEY=
 CRON_SECRET=
 NEXT_PUBLIC_SITE_URL=
+OVERLAY_SIGNING_SECRET=
+ESCROW_ENCRYPTION_SECRET=
 ```
 
 ### Optional
 
 ```bash
 NEXT_PUBLIC_SOLANA_RPC_URL=
-DEXSCREENER_WS_URL=
 FILEBASE_ACCESS_KEY_ID=
 FILEBASE_SECRET_ACCESS_KEY=
 FILEBASE_BUCKET=
@@ -170,14 +173,43 @@ Use it as the Bearer token for:
 
 - `GET /api/cron/payments`
 
-### DexScreener WebSocket URL
+### Overlay Signing Secret
 
-`DEXSCREENER_WS_URL` is currently not wired into the frontend runtime.
+`OVERLAY_SIGNING_SECRET` is self-generated.
+
+It signs the per-stream heartbeat key embedded in overlay URLs.
+
+Recommended:
+
+- set a dedicated random secret instead of relying on the fallback to `SUPABASE_SERVICE_ROLE_KEY`
+- rotate it deliberately, knowing that previously issued overlay URLs will stop heartbeating until refreshed
+
+Example:
+
+```bash
+openssl rand -hex 32
+```
+
+### Escrow Encryption Secret
+
+`ESCROW_ENCRYPTION_SECRET` is self-generated.
+
+It encrypts escrow deposit secrets before they are stored. The code can still read older plaintext rows for backward compatibility, but production should use a dedicated encryption secret.
+
+Example:
+
+```bash
+openssl rand -hex 32
+```
+
+### DexScreener
+
+The current client hook uses periodic REST polling.
 
 Operator guidance:
 
-- leave it unset unless you intentionally patch the client to use it
-- do not block deployment on getting this value
+- there is no DexScreener websocket env to configure in the current runtime
+- do not block deployment on a websocket setup that the app no longer uses
 
 ## One-Time Setup
 
@@ -219,7 +251,6 @@ Only do this if you want Filebase-backed upload URLs:
 Important:
 
 - the current primary banner flow works with direct HTTPS banner URLs
-- media job endpoints are disabled right now
 
 ## Pre-Deploy Verification
 
@@ -240,6 +271,8 @@ npm run build
 - `HELIUS_RPC_URL` resolves from the deployment environment
 - `NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA` is the intended treasury address
 - `CRON_SECRET` is set if cron reconciliation is enabled
+- `OVERLAY_SIGNING_SECRET` is set explicitly
+- `ESCROW_ENCRYPTION_SECRET` is set explicitly
 
 ## Smoke Test Checklist
 
@@ -249,10 +282,12 @@ After deployment:
 2. Load `/streams` and confirm stream inventory can be fetched.
 3. Authenticate through Privy and confirm `/dashboard/streamer` loads.
 4. Create a test stream and confirm it appears in the dashboard.
-5. Create a test ad through `/dashboard/sponsor`.
-6. Verify the app returns a deposit address.
-7. Submit a small test payment and run payment verification with a known signature.
-8. For banner ads, confirm streamer approval via `/api/ads/review`.
+5. Open the returned overlay URL and confirm heartbeats succeed.
+6. Create a test ad through `/dashboard/sponsor`.
+7. Verify the app returns a deposit address or direct payment target, depending on ad type.
+8. Submit a small test payment and run payment verification with a known signature.
+9. If the payment used escrow, confirm the sweep transaction hash is returned.
+10. For banner ads, confirm streamer approval via `/api/ads/review`.
 
 ## Operational Runbook
 
@@ -278,6 +313,18 @@ What to watch:
 - requires a synced Privy user
 - validates URLs and payout wallet
 - for Pump streams, may verify creator wallet against the mint
+- returns a signed overlay URL that should be treated as the live overlay entrypoint
+
+### Overlay heartbeat
+
+Route:
+
+- `POST /api/streams/heartbeat`
+
+What to watch:
+
+- the overlay must send the correct signed key for the target stream
+- the route updates liveness, but no longer acts as an unauthenticated verification toggle
 
 ### Ad creation
 
@@ -290,6 +337,7 @@ What to watch:
 - chart ads require a DexScreener pair lookup to succeed
 - banner ads require an HTTPS banner URL
 - returns payment routing details and deposit address
+- if the caller is authenticated, the ad is attributed to the sponsor account for dashboard history
 
 ### Payment verification
 
@@ -301,7 +349,8 @@ What to watch:
 
 - requires `txSignature`
 - validates recipient and amount against Solana chain data
-- writes verified state back into Supabase
+- returns a minimal public payment status payload, not raw admin records
+- for escrow payments, attempts an automatic sweep after verification and returns the sweep transaction hash when successful
 
 ### Cron reconciliation
 

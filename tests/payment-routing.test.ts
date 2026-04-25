@@ -25,11 +25,11 @@ describe('payment routing', () => {
     });
   });
 
-  it('routes Kick banner ads through escrow with no commission', () => {
+  it('routes X banner ads through escrow with no commission', () => {
     expect(
       getPaymentRoute({
         adType: 'banner',
-        platform: 'kick',
+        platform: 'x',
         payoutWallet: 'streamer-wallet',
       amount: 0.001,
       escrowAddress: 'escrow-wallet',

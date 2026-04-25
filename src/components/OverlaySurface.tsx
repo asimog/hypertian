@@ -8,7 +8,7 @@ import { useDexScreener } from '@/hooks/useDexScreener';
 import { STREAM_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
 import { OverlayActiveAd, StreamRecord } from '@/lib/types';
 
-type Platform = 'x' | 'pump' | 'kick';
+type Platform = 'x' | 'pump';
 
 interface OverlaySurfaceProps {
   platform: Platform;
@@ -36,6 +36,7 @@ function getPositionClass(position: string) {
 
 export default function OverlaySurface({ platform, searchParams }: OverlaySurfaceProps) {
   const streamId = searchParams.get('stream');
+  const heartbeatKey = searchParams.get('key');
   const [activeAds, setActiveAds] = useState<OverlayActiveAd[]>([]);
   const [stream, setStream] = useState<StreamRecord | null>(null);
   const activeAd = activeAds[0] ?? null;
@@ -63,14 +64,14 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
     document.body.style.margin = '0';
 
     const sendHeartbeat = () => {
-      if (!streamId) {
+      if (!streamId || !heartbeatKey) {
         return;
       }
 
       void fetch('/api/streams/heartbeat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ streamId }),
+        body: JSON.stringify({ streamId, key: heartbeatKey }),
       });
     };
 
@@ -127,7 +128,7 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
       }
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [streamId]);
+  }, [heartbeatKey, streamId]);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-transparent select-none">

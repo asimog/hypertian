@@ -1,5 +1,7 @@
 import { fail, ok } from '@/lib/http';
+import { createOverlayHeartbeatKey } from '@/lib/overlay-auth';
 import { DEFAULT_AD_PRICE_SOL } from '@/lib/constants';
+import { getSiteUrl } from '@/lib/env';
 import { assertHttpsUrl, sanitizeOptionalHttpsUrl, streamPlatformSchema } from '@/lib/platform';
 import { requirePrivyUser } from '@/lib/privy';
 import { getPumpCreatorWallet } from '@/lib/pump';
@@ -69,7 +71,10 @@ export async function POST(request: Request) {
       pumpCreatorVerified,
     });
 
-    return ok({ stream });
+    return ok({
+      stream,
+      overlayUrl: `${getSiteUrl()}/overlay/${stream.id}?key=${createOverlayHeartbeatKey(stream.id)}`,
+    });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Failed to create stream.', 400);
   }
