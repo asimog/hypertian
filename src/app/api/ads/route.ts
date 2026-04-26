@@ -82,7 +82,22 @@ export async function POST(request: Request) {
     });
 
     return ok({
-      ad,
+      ad: {
+        id: ad.id,
+        stream_id: ad.stream_id,
+        ad_type: ad.ad_type,
+        status: ad.status,
+        token_address: ad.token_address,
+        chain: ad.chain,
+        dex_pair_address: ad.dex_pair_address ?? null,
+        banner_url: ad.banner_url ?? null,
+        duration_minutes: ad.duration_minutes ?? null,
+        position: ad.position,
+        size: ad.size,
+        is_active: ad.is_active,
+        expires_at: ad.expires_at,
+        created_at: ad.created_at,
+      },
       paymentId: payment.id,
       amount,
       currency: payment.currency,

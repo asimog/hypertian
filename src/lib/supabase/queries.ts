@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getBannerReviewState, getPaidAdActivationState } from '@/lib/ad-state';
 import { DEFAULT_AD_DURATION_MINUTES, DEFAULT_AD_PRICE_SOL, STREAM_PLATFORM_PRIORITY } from '@/lib/constants';
 import { getServerEnv, isSupabaseAdminEnabled } from '@/lib/env';
+import { assertSolanaWallet } from '@/lib/platform';
 import { getPaymentRoute } from '@/lib/payment-routing';
 import { generateSolanaDepositAccount, sweepEscrowBalance, verifyDirectSolPayment } from '@/lib/solana';
 import {
@@ -168,9 +169,30 @@ export async function listActiveAdsForStream(streamId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('ads')
-    .select('*')
+    .select(
+      [
+        'id',
+        'stream_id',
+        'ad_type',
+        'status',
+        'token_address',
+        'chain',
+        'dex_pair_address',
+        'banner_url',
+        'duration_minutes',
+        'starts_at',
+        'payment_tx_signature',
+        'position',
+        'size',
+        'is_active',
+        'is_hidden',
+        'expires_at',
+        'created_at',
+      ].join(', '),
+    )
     .eq('stream_id', streamId)
     .eq('is_active', true)
+    .eq('is_hidden', false)
     .eq('status', 'active')
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
@@ -300,6 +322,10 @@ export async function createAdWithDirectPayment(input: {
   if (!stream.payout_wallet) {
     throw new Error('Stream is missing a payout wallet.');
   }
+  const payoutWallet =
+    stream.platform === 'pump'
+      ? assertSolanaWallet(stream.pump_deployer_wallet ?? stream.payout_wallet, 'Pump deployer wallet')
+      : assertSolanaWallet(stream.payout_wallet, 'Payout wallet');
 
   const amount = Number(stream.price_sol ?? DEFAULT_AD_PRICE_SOL);
   const durationMinutes = DEFAULT_AD_DURATION_MINUTES;
@@ -308,7 +334,7 @@ export async function createAdWithDirectPayment(input: {
   const paymentRoute = getPaymentRoute({
     adType: input.adType,
     platform: stream.platform,
-    payoutWallet: stream.payout_wallet,
+    payoutWallet,
     amount,
     escrowAddress: escrowAccount.address,
     escrowSecret: escrowAccount.secret,

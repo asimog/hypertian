@@ -48,7 +48,7 @@ describe('payment routing', () => {
     });
   });
 
-  it('routes PumpFun chart ads through escrow with 10 percent commission', () => {
+  it('routes PumpFun chart ads through escrow to the deployer wallet with no commission', () => {
     expect(
       getPaymentRoute({
         adType: 'chart',
@@ -64,10 +64,10 @@ describe('payment routing', () => {
       depositAddress: 'escrow-wallet',
       depositSecret: 'secret',
       paidToWallet: 'pump-deployer-wallet',
-      platformTreasuryWallet: 'treasury-wallet',
-      commissionBps: 1000,
-      platformFeeAmount: 0.0001,
-      streamerAmount: 0.0009,
+      platformTreasuryWallet: null,
+      commissionBps: 0,
+      platformFeeAmount: 0,
+      streamerAmount: 0.001,
     });
   });
 
@@ -82,8 +82,8 @@ describe('payment routing', () => {
     ).toThrow('Escrow payment route');
   });
 
-  it('requires a treasury wallet for PumpFun commission routes', () => {
-    expect(() =>
+  it('does not require a treasury wallet while commission is disabled', () => {
+    expect(
       getPaymentRoute({
         adType: 'chart',
         platform: 'pump',
@@ -91,7 +91,7 @@ describe('payment routing', () => {
         amount: 0.001,
         escrowAddress: 'escrow-wallet',
         escrowSecret: 'secret',
-      }),
-    ).toThrow('NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA');
+      }).platformTreasuryWallet,
+    ).toBeNull();
   });
 });

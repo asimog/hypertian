@@ -1,6 +1,7 @@
 import '@/app/globals.css';
 import type { Metadata, Viewport } from 'next';
 import { AppShell } from '@/components/app-shell';
+import { MusicProvider } from '@/components/music-provider';
 import { Providers } from '@/components/providers';
 import { SiteBackground } from '@/components/site-background';
 import { getSiteUrl } from '@/lib/env';
@@ -36,11 +37,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Providers>
-          <SiteBackground />
-          <a className="skip-link" href="#main-content">
-            Skip to content
-          </a>
-          <AppShell>{children}</AppShell>
+          <MusicProvider>
+            <SiteBackground />
+            <a className="skip-link" href="#main-content">
+              Skip to content
+            </a>
+            <AppShell>{children}</AppShell>
+          </MusicProvider>
         </Providers>
       </body>
     </html>

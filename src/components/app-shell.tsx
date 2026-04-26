@@ -3,67 +3,104 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
-import { Activity, ArrowUpRight, RadioTower, TvMinimalPlay, Wallet } from 'lucide-react';
+import { Activity, Music2, Pause, Play, RadioTower, TvMinimalPlay, Wallet } from 'lucide-react';
 import { isPrivyEnabled } from '@/lib/env';
+import { useMusic } from '@/components/music-provider';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Overview' },
-  { href: '/streams', label: 'Directory' },
-  { href: '/dashboard/streamer', label: 'Creator Studio' },
-  { href: '/dashboard/sponsor', label: 'Ad Desk' },
-  { href: '/pump', label: 'PumpAds' },
+  { href: '/streamer', label: 'Streamer' },
+  { href: '/directory', label: 'Directory' },
+  { href: '/feed', label: 'Feed' },
+  { href: '/music', label: 'Music' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const privyEnabled = isPrivyEnabled();
   const pathname = usePathname();
+  const isOverlayRoute = pathname?.startsWith('/overlay');
+
+  if (isOverlayRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="relative z-10 min-h-screen">
       <header className="sticky top-0 z-40 px-4 pt-4 sm:px-5">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 rounded-[30px] border border-white/10 bg-[rgba(5,10,13,0.78)] px-5 py-4 shadow-[0_18px_70px_rgba(3,8,10,0.45)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(124,228,210,0.42),_rgba(44,109,130,0.22)_55%,_rgba(8,16,19,0.1)_100%)] text-[var(--color-ink)] shadow-[0_10px_30px_rgba(37,120,117,0.24)]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 rounded-[26px] border border-white/10 bg-[rgba(5,10,13,0.78)] px-4 py-3 shadow-[0_18px_60px_rgba(3,8,10,0.45)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+          <Link aria-label="Hypertian home" className="flex items-center gap-3" href="/directory">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(124,228,210,0.42),_rgba(44,109,130,0.22)_55%,_rgba(8,16,19,0.1)_100%)] text-[var(--color-ink)]">
               <TvMinimalPlay className="h-5 w-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <div className="text-xs uppercase tracking-[0.35em] text-[var(--color-accent)]">Hypertian</div>
-                <span className="pill hidden md:inline-flex">Livestream ads</span>
-              </div>
-              <div className="text-sm text-[var(--color-copy-soft)]">Creator-approved ads with verified payouts.</div>
+              <div className="text-xs uppercase tracking-[0.32em] text-[var(--color-accent)]">Hypertian</div>
+              <div className="text-xs text-[var(--color-copy-soft)]">Livestream ad rails — free for now</div>
             </div>
-          </div>
+          </Link>
 
-          <nav aria-label="Primary navigation" className="flex flex-wrap items-center gap-2">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                aria-current={pathname === item.href ? 'page' : undefined}
-                className={`inline-flex min-h-10 items-center rounded-full border px-4 py-2 text-sm transition ${
-                  pathname === item.href
-                    ? 'border-[rgba(124,228,210,0.5)] bg-[rgba(124,228,210,0.13)] text-white shadow-[0_8px_28px_rgba(54,164,157,0.18)]'
-                    : 'border-white/10 bg-white/[0.03] text-[var(--color-copy-soft)] hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
-                }`}
-                href={item.href}
-                key={item.href}
-              >
-                {item.label}
-              </Link>
-            ))}
+          <nav aria-label="Primary" className="flex flex-wrap items-center gap-1.5">
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              return (
+                <Link
+                  aria-current={active ? 'page' : undefined}
+                  className={`inline-flex min-h-9 items-center rounded-full border px-3.5 py-1.5 text-sm transition ${
+                    active
+                      ? 'border-[rgba(124,228,210,0.5)] bg-[rgba(124,228,210,0.13)] text-white'
+                      : 'border-white/10 bg-white/[0.03] text-[var(--color-copy-soft)] hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
+                  }`}
+                  href={item.href}
+                  key={item.href}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="flex items-center gap-2">
-            <a className="secondary-button hidden lg:inline-flex" href="#production-readiness">
-              How it works
-              <ArrowUpRight className="h-4 w-4" />
-            </a>
-            {privyEnabled ? <PrivyAuthControls /> : null}
+            {privyEnabled ? <PrivyAuthControls /> : <span className="text-xs text-[var(--color-copy-faint)]">Sign-in optional</span>}
           </div>
         </div>
       </header>
-      <main className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 pb-16" id="main-content">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 pb-16 sm:px-5" id="main-content">
         {children}
       </main>
+      <footer className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 pb-8 sm:px-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-copy-faint)]">
+          <span>Hypertian</span>
+          <span aria-hidden>·</span>
+          <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/feedback">
+            Feedback
+          </Link>
+          <span aria-hidden>·</span>
+          <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/admin">
+            Admin
+          </Link>
+        </div>
+        <FooterMusicControls />
+      </footer>
+    </div>
+  );
+}
+
+function FooterMusicControls() {
+  const music = useMusic();
+  const title = music.sourceKind === 'youtube' ? 'YouTube audio' : music.selectedTrack?.label ?? 'Music ready';
+
+  return (
+    <div className="flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-2 py-1 text-xs text-[var(--color-copy-soft)]">
+      <Link className="inline-flex items-center gap-1.5 px-2 text-white" href="/music">
+        <Music2 aria-hidden className="h-3.5 w-3.5 text-[var(--color-accent)]" />
+        <span className="max-w-[11rem] truncate">{title}</span>
+      </Link>
+      <button
+        aria-label={music.isPlaying ? 'Pause music' : 'Play music'}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white hover:border-white/20"
+        onClick={() => void music.toggle()}
+        type="button"
+      >
+        {music.isPlaying ? <Pause aria-hidden className="h-4 w-4" /> : <Play aria-hidden className="h-4 w-4" />}
+      </button>
     </div>
   );
 }
@@ -73,28 +110,25 @@ function PrivyAuthControls() {
 
   if (authenticated) {
     return (
-      <>
-        <div className="pill max-w-[17rem] truncate">
-          {user?.email?.address || user?.twitter?.username || 'Wallet connected'}
-        </div>
-        <button
-          className="secondary-button"
-          onClick={() => logout()}
-          type="button"
-        >
-          Disconnect
-        </button>
-      </>
+      <button
+        aria-label="Disconnect"
+        className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-[var(--color-copy-soft)] transition hover:border-white/20 hover:text-white"
+        onClick={() => logout()}
+        title={user?.email?.address || user?.twitter?.username || 'Wallet connected'}
+        type="button"
+      >
+        Sign out
+      </button>
     );
   }
 
   return (
     <button
-      className="primary-button"
+      className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-[var(--color-copy-soft)] transition hover:border-white/20 hover:text-white"
       onClick={login}
       type="button"
     >
-      Connect account
+      Optional sign-in
     </button>
   );
 }
@@ -112,13 +146,13 @@ export function MetricCard({
 }) {
   const Icon = icon === 'wallet' ? Wallet : icon === 'activity' ? Activity : RadioTower;
   return (
-    <div className="panel rounded-[30px] p-5 shadow-[0_22px_65px_rgba(4,10,13,0.45)]">
-      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-[var(--color-accent)]">
+    <div className="panel rounded-[24px] p-5">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-[var(--color-accent)]">
         <Icon className="h-5 w-5" />
       </div>
-      <div className="text-xs uppercase tracking-[0.3em] text-[var(--color-copy-faint)]">{label}</div>
-      <div className="mt-3 text-3xl font-semibold text-white">{value}</div>
-      <p className="mt-2 text-sm text-[var(--color-copy-soft)]">{hint}</p>
+      <div className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-copy-faint)]">{label}</div>
+      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
+      <p className="mt-1 text-xs text-[var(--color-copy-soft)]">{hint}</p>
     </div>
   );
 }

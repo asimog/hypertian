@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertHttpsUrl, isFreshHeartbeat, streamPlatformSchema } from '../src/lib/platform';
+import { assertHttpsUrl, assertSolanaWallet, isFreshHeartbeat, streamPlatformSchema } from '../src/lib/platform';
 
 describe('platform helpers', () => {
   it('supports all v1 livestream platforms', () => {
@@ -22,5 +22,10 @@ describe('platform helpers', () => {
     const now = Date.now();
     expect(isFreshHeartbeat(new Date(now - 29_000).toISOString(), now)).toBe(true);
     expect(isFreshHeartbeat(new Date(now - 31_000).toISOString(), now)).toBe(false);
+  });
+
+  it('validates Solana wallet addresses', () => {
+    expect(assertSolanaWallet('11111111111111111111111111111111')).toBe('11111111111111111111111111111111');
+    expect(() => assertSolanaWallet('not-a-wallet')).toThrow('valid Solana wallet');
   });
 });

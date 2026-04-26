@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PublicKey } from '@solana/web3.js';
 import { STREAM_HEARTBEAT_STALE_MS } from '@/lib/constants';
 
 export const streamPlatformSchema = z.enum(['x', 'pump']);
@@ -40,4 +41,12 @@ export function sanitizeOptionalHttpsUrl(value: string | null | undefined, label
   }
 
   return assertHttpsUrl(value, label);
+}
+
+export function assertSolanaWallet(value: string, label = 'Solana wallet') {
+  try {
+    return new PublicKey(value).toBase58();
+  } catch {
+    throw new Error(`${label} must be a valid Solana wallet address.`);
+  }
 }

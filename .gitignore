@@ -8,3 +8,6 @@ apphosting.local.yaml
 *.tsbuildinfo
 firebase-debug.log
 .vercel
+
+# Quarantined legacy routes — kept locally for reference, not shipped.
+src/_legacy_app/
