@@ -31,7 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="text-xs uppercase tracking-[0.35em] text-[var(--color-accent)]">Hypertian</div>
                 <span className="pill hidden md:inline-flex">Livestream ads</span>
               </div>
-              <div className="text-sm text-[var(--color-copy-soft)]">Operational ad rails with creator approval and verified payouts.</div>
+              <div className="text-sm text-[var(--color-copy-soft)]">Creator-approved ads with verified payouts.</div>
             </div>
           </div>
 
@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-2">
             <a className="secondary-button hidden lg:inline-flex" href="#production-readiness">
-              Product scope
+              How it works
               <ArrowUpRight className="h-4 w-4" />
             </a>
             {privyEnabled ? <PrivyAuthControls /> : null}

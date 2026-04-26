@@ -2,16 +2,16 @@ import Link from 'next/link';
 import { Activity, ArrowRight, BadgeDollarSign, RadioTower, ShieldCheck, Sparkles, UserRoundCheck } from 'lucide-react';
 
 const LANES = [
-  ['X Ads', '/x-overlay', 'Premium placement on the single @HyperMythX account with live token context and paid disclosure.'],
-  ['PumpAds', '/pump', 'A creator network where Pump streamers can register inventory, review banners, and run verified sponsor placements.'],
-  ['Ad Desk', '/dashboard/sponsor', 'Launch funded ad placements, verify deposits, and monitor campaign status.'],
-  ['Creator Studio', '/dashboard/streamer', 'Register stream inventory, approve banners, and manage payout-ready overlay surfaces.'],
+  ['X Ads', '/x-overlay', 'Premium placements for @HyperMythX with live token context and clear sponsor disclosure.'],
+  ['PumpAds', '/pump', 'A creator network for Pump streamers with approved media and verified sponsor demand.'],
+  ['Ad Desk', '/dashboard/sponsor', 'Book placements, confirm deposits, and follow campaign status in one flow.'],
+  ['Creator Studio', '/dashboard/streamer', 'Package live inventory, approve creative, and keep payouts ready.'],
 ] as const;
 
 const READINESS_ITEMS = [
-  'X Ads is linked exclusively to @HyperMythX.',
-  'PumpAds supports a growing network of Pump streamers who can join the platform.',
-  'Payment verification, banner approval, and live overlays are wired for production deployment.',
+  'X Ads stays exclusive to @HyperMythX.',
+  'PumpAds gives Pump creators a simple path into sponsor inventory.',
+  'Payments, approvals, and live placements are production-ready.',
 ] as const;
 
 export default function HomePage() {
@@ -24,11 +24,11 @@ export default function HomePage() {
               <Sparkles className="h-3.5 w-3.5" />
               Livestream ad rails
             </div>
-            <h1 className="mt-6 max-w-5xl text-5xl font-semibold tracking-[-0.07em] text-white md:text-7xl">
-              X Ads for one account. PumpAds for every Pump streamer.
+            <h1 className="mt-6 max-w-5xl text-5xl font-semibold text-white md:text-7xl">
+              Livestream ads with creator control built in.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-copy-soft)]">
-              Hypertian separates premium X inventory from an open PumpAds creator network. Sponsors get a clear checkout flow, creators keep approval control, and every live surface stays OBS-ready.
+              Hypertian helps sponsors book verified placements while creators approve what reaches their audience.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link className="primary-button" href="/x-overlay?token=So11111111111111111111111111111111111111112&chain=solana&position=bottom-right&size=large&theme=dark&showChart=true&showMedia=true">
@@ -45,15 +45,15 @@ export default function HomePage() {
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               <div className="hero-stat">
                 <span>1</span>
-                X account
+                premium X lane
               </div>
               <div className="hero-stat">
                 <span>Open</span>
-                Pump streamer signups
+                Pump creator signups
               </div>
               <div className="hero-stat">
                 <span>Live</span>
-                verified payment checks
+                payment checks
               </div>
             </div>
           </div>
@@ -63,15 +63,15 @@ export default function HomePage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-[0.28em] text-[var(--color-accent)]">Live ad operations</div>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Two products, one trusted ad stack.</h2>
+                <h2 className="mt-3 text-2xl font-semibold text-white">Two ad lanes. One trusted stack.</h2>
               </div>
               <div className="pill">Separated inventory</div>
             </div>
             <div className="mt-6 grid gap-4">
               {[
-                ['X Ads', 'A single-account lane for @HyperMythX placements with tight brand control.'],
-                ['PumpAds', 'A streamer platform for Pump creators who want sponsor-ready live inventory.'],
-                ['Verified delivery', 'Campaigns activate after payment confirmation and creator approval when banner creative is involved.'],
+                ['X Ads', 'Premium inventory for @HyperMythX with clear brand control.'],
+                ['PumpAds', 'Sponsor-ready inventory for Pump creators.'],
+                ['Verified delivery', 'Placements run after payment confirmation and creator approval.'],
               ].map(([title, body], index) => (
                 <div className="rounded-[26px] border border-white/10 bg-white/[0.04] p-4" key={title}>
                   <div className="font-mono text-xs uppercase tracking-[0.24em] text-[var(--color-copy-faint)]">0{index + 1}</div>
@@ -99,27 +99,27 @@ export default function HomePage() {
       <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
         <article className="panel rounded-[34px] p-6 md:p-8">
           <div className="eyebrow">Product lanes</div>
-          <h2 className="mt-5 text-3xl font-semibold text-white">Built for sponsors, clear for creators.</h2>
+          <h2 className="mt-5 text-3xl font-semibold text-white">Built for sponsors. Clear for creators.</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
               <RadioTower className="h-6 w-6 text-[var(--color-accent)]" />
               <h3 className="mt-4 text-lg font-semibold text-white">X Ads</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--color-copy-soft)]">
-                The X lane is reserved for @HyperMythX, keeping audience, pricing, and creative review tightly controlled.
+                Reserved inventory for @HyperMythX with controlled audience, pricing, and creative review.
               </p>
             </div>
             <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
               <UserRoundCheck className="h-6 w-6 text-[var(--color-accent-alt)]" />
               <h3 className="mt-4 text-lg font-semibold text-white">PumpAds</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--color-copy-soft)]">
-                Pump streamers can join the platform and turn live attention into sponsor-ready inventory.
+                Pump creators can turn live attention into sponsor-ready inventory.
               </p>
             </div>
             <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
               <BadgeDollarSign className="h-6 w-6 text-[var(--color-accent)]" />
               <h3 className="mt-4 text-lg font-semibold text-white">Buyer confidence</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--color-copy-soft)]">
-                Deposit status, campaign state, and banner approval are visible before an ad goes live.
+                Deposits, campaign status, and banner approval are visible before launch.
               </p>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function HomePage() {
 
         <article className="panel rounded-[34px] p-6 md:p-8" id="production-readiness">
           <div className="eyebrow">Scope</div>
-          <h2 className="mt-5 text-3xl font-semibold text-white">What Hypertian is responsible for</h2>
+          <h2 className="mt-5 text-3xl font-semibold text-white">What Hypertian manages</h2>
           <div className="mt-6 grid gap-4">
             {READINESS_ITEMS.map((item) => (
               <div className="flex items-start gap-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4" key={item}>
@@ -142,23 +142,23 @@ export default function HomePage() {
       <section className="grid gap-6 lg:grid-cols-3">
         <article className="panel rounded-[32px] p-6">
           <div className="text-xs uppercase tracking-[0.3em] text-[var(--color-accent)]">Media workflow</div>
-          <h2 className="mt-4 text-2xl font-semibold text-white">Ads are reviewed before they go live.</h2>
+          <h2 className="mt-4 text-2xl font-semibold text-white">Creative review before launch.</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--color-copy-soft)]">
-            Banner creative moves through creator approval before it appears beside a live token chart.
+            Banner media needs creator approval before it reaches a live audience.
           </p>
         </article>
         <article className="panel rounded-[32px] p-6">
           <div className="text-xs uppercase tracking-[0.3em] text-[var(--color-accent-alt)]">Shared engine</div>
-          <h2 className="mt-4 text-2xl font-semibold text-white">Dex chart plus approved media together</h2>
+          <h2 className="mt-4 text-2xl font-semibold text-white">Charts and media in one surface.</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--color-copy-soft)]">
-            X Ads and PumpAds share the same chart, disclosure, banner, and live-status components.
+            X Ads and PumpAds share a reliable live placement system.
           </p>
         </article>
         <article className="panel rounded-[32px] p-6">
           <div className="text-xs uppercase tracking-[0.3em] text-[var(--color-copy)]">Streamer growth</div>
-          <h2 className="mt-4 text-2xl font-semibold text-white">PumpAds expands with creators.</h2>
+          <h2 className="mt-4 text-2xl font-semibold text-white">PumpAds grows with creators.</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--color-copy-soft)]">
-            The Pump lane is designed for streamers who want a cleaner way to package sponsor demand.
+            The Pump lane gives streamers a cleaner way to package sponsor demand.
           </p>
         </article>
       </section>

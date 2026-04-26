@@ -18,6 +18,10 @@ type StreamerDashboardProps = {
   initialAds: AdRecord[];
 };
 
+function readableStatus(value: string | null | undefined) {
+  return (value || 'review needed').replace(/_/g, ' ');
+}
+
 function StreamerDashboardContent({
   initialStreams,
   initialAds,
@@ -155,17 +159,17 @@ function StreamerDashboardContent({
   return (
     <div className="grid gap-6">
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon="stream" label="Streams" value={String(streams.length)} hint="Registered livestream inventory ready for sponsors." />
-        <MetricCard icon="activity" label="Live ads" value={String(activeAds.length)} hint="Campaigns currently eligible to render." />
-        <MetricCard icon="wallet" label="Banner approvals" value={String(pendingBannerAds.length)} hint={wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Connect your creator wallet to sync payouts.'} />
+        <MetricCard icon="stream" label="Inventory" value={String(streams.length)} hint="Sponsor-ready livestream placements." />
+        <MetricCard icon="activity" label="Live ads" value={String(activeAds.length)} hint="Campaigns eligible to run now." />
+        <MetricCard icon="wallet" label="Approvals" value={String(pendingBannerAds.length)} hint={wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Connect your creator wallet for payouts.'} />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <div className={panelClassName}>
           <div className="section-kicker">Creator setup</div>
-          <h2 className="section-heading">Register a sponsor-ready livestream</h2>
+          <h2 className="section-heading">Add a sponsor-ready stream</h2>
           <p className="section-copy">
-            Add the stream profile, payout wallet, and base pricing once. Hypertian uses these details to power the public directory and stable OBS overlay links.
+            Add your profile, payout wallet, and base price once. Hypertian turns it into bookable inventory.
           </p>
           <div className="mt-6 grid gap-4">
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="stream-platform">
@@ -180,12 +184,12 @@ function StreamerDashboardContent({
               <input autoComplete="organization" id="display-name" className={fieldClassName} onChange={(event) => setDisplayName(event.target.value)} placeholder="HyperMythX" value={displayName} />
             </label>
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="profile-url">
-              Profile URL
-              <input autoComplete="url" id="profile-url" className={fieldClassName} inputMode="url" onChange={(event) => setProfileUrl(event.target.value)} placeholder="https://x.com/yourhandle" type="url" value={profileUrl} />
+              Creator profile
+              <input autoComplete="url" id="profile-url" className={fieldClassName} inputMode="url" onChange={(event) => setProfileUrl(event.target.value)} placeholder="Profile link" type="url" value={profileUrl} />
             </label>
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="stream-url">
-              Live stream URL
-              <input autoComplete="url" id="stream-url" className={fieldClassName} inputMode="url" onChange={(event) => setStreamUrl(event.target.value)} placeholder="https://..." type="url" value={streamUrl} />
+              Live stream link
+              <input autoComplete="url" id="stream-url" className={fieldClassName} inputMode="url" onChange={(event) => setStreamUrl(event.target.value)} placeholder="Stream link" type="url" value={streamUrl} />
             </label>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-white" htmlFor="payout-wallet">
@@ -198,8 +202,8 @@ function StreamerDashboardContent({
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="default-banner">
-              Default fallback banner URL
-              <input autoComplete="url" id="default-banner" className={fieldClassName} inputMode="url" onChange={(event) => setDefaultBannerUrl(event.target.value)} placeholder="https://example.com/default.png" type="url" value={defaultBannerUrl} />
+              Fallback banner asset
+              <input autoComplete="url" id="default-banner" className={fieldClassName} inputMode="url" onChange={(event) => setDefaultBannerUrl(event.target.value)} placeholder="Fallback banner link" type="url" value={defaultBannerUrl} />
             </label>
             {platform === 'pump' ? (
               <div className="grid gap-4 md:grid-cols-2">
@@ -214,26 +218,26 @@ function StreamerDashboardContent({
               </div>
             ) : null}
             <div className="status-note">
-              Pump streams can include a mint and creator wallet for extra verification. X streams only need the public profile URL, live URL, and payout wallet.
+              Pump streams can include a mint and creator wallet for extra verification.
             </div>
             <button aria-busy={creating} className="primary-button" disabled={!canCreate || creating || !displayName || !profileUrl || !streamUrl || !payoutWallet} onClick={createStream} type="button">
-              {creating ? 'Creating...' : canCreate ? 'Create stream' : 'Streamer login required'}
+              {creating ? 'Creating...' : canCreate ? 'Add stream' : 'Creator login required'}
             </button>
             {errorMessage ? <div className="status-note" data-tone="danger">{errorMessage}</div> : null}
           </div>
         </div>
 
         <div className={panelClassName}>
-          <div className="section-kicker text-[var(--color-accent-alt)]">Browser sources</div>
-          <h2 className="section-heading">OBS links and live status</h2>
+          <div className="section-kicker text-[var(--color-accent-alt)]">Live setup</div>
+          <h2 className="section-heading">Overlay status</h2>
           <p className="section-copy">
-            Each stream gets a stable overlay URL. Copy it into OBS Browser Source and keep the tab open so heartbeat status stays fresh.
+            Keep your placement surface ready and confirm each stream is available for sponsor bookings.
           </p>
           <div className="mt-4 grid gap-4">
             {loadingDashboard ? (
               <div className="soft-card flex items-center gap-3 text-sm text-[var(--color-copy-soft)]">
                 <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin text-[var(--color-accent)]" />
-                Loading your stream inventory...
+                Loading your inventory...
               </div>
             ) : null}
             {streams.map((stream) => {
@@ -244,22 +248,22 @@ function StreamerDashboardContent({
                     <div>
                       <h3 className="text-lg font-semibold text-white">{stream.display_name || STREAM_PLATFORM_NAMES[stream.platform]}</h3>
                       <p className="mt-1 text-sm text-[var(--color-copy-soft)]">
-                        {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL · {isFreshHeartbeat(stream.last_heartbeat) ? 'Heartbeat live' : 'Heartbeat missing'}
+                        {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL · {isFreshHeartbeat(stream.last_heartbeat) ? 'Live-ready' : 'Needs check-in'}
                       </p>
                     </div>
-                    <div className="pill">{stream.verification_status || 'unverified'}</div>
+                    <div className="pill">{readableStatus(stream.verification_status)}</div>
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm text-[var(--color-copy-soft)]">
                     <div>
-                      <dt className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-copy-faint)]">OBS browser source</dt>
-                      <dd className="mt-1 break-all font-mono text-xs text-[var(--color-accent)]">{overlayUrl}</dd>
+                      <dt className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-copy-faint)]">Placement surface</dt>
+                      <dd className="mt-1 text-sm text-[var(--color-copy-soft)]">{overlayUrl ? 'Ready to copy' : 'Created after stream registration'}</dd>
                     </div>
                   </dl>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {overlayUrl ? <CopyButton className="secondary-button" label="Copy overlay URL" value={overlayUrl} /> : null}
+                    {overlayUrl ? <CopyButton className="secondary-button" label="Copy placement link" value={overlayUrl} /> : null}
                     {stream.stream_url ? (
                       <a className="secondary-button" href={stream.stream_url} rel="noreferrer" target="_blank">
-                        Open live URL
+                        Open stream
                       </a>
                     ) : null}
                   </div>
@@ -271,9 +275,9 @@ function StreamerDashboardContent({
                 <div className="flex items-start gap-3">
                   <RadioTower aria-hidden="true" className="mt-1 h-5 w-5 text-[var(--color-accent)]" />
                   <div>
-                    <h3 className="text-base font-semibold text-white">No streams registered yet</h3>
+                    <h3 className="text-base font-semibold text-white">No streams yet</h3>
                     <p className="mt-2 text-sm leading-6 text-[var(--color-copy-soft)]">
-                      Create your first stream to appear in the directory and generate an overlay URL for OBS.
+                      Add your first stream to unlock sponsor bookings.
                     </p>
                   </div>
                 </div>
@@ -284,19 +288,19 @@ function StreamerDashboardContent({
       </section>
 
       <section className={panelClassName}>
-        <div className="section-kicker text-[var(--color-copy)]">Pending banner approvals</div>
-        <h2 className="section-heading">Review banner creative before it goes live</h2>
+        <div className="section-kicker text-[var(--color-copy)]">Creative review</div>
+        <h2 className="section-heading">Approve banner campaigns</h2>
         <p className="section-copy">
-          Paid banner campaigns stay pending until you approve or reject the submitted URL. Chart campaigns do not require this extra step.
+          Paid banner campaigns wait for your approval before they run. Chart campaigns go live after payment.
         </p>
         <div className="mt-4 grid gap-4">
           {pendingBannerAds.map((ad) => (
             <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-5" key={ad.id}>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Banner URL</h3>
-                  <a className="mt-1 block break-all text-xs text-[var(--color-accent)]" href={ad.banner_url || '#'} rel="noreferrer" target="_blank">
-                    {ad.banner_url}
+                  <h3 className="text-sm font-semibold text-white">Submitted banner</h3>
+                  <a className="secondary-button mt-2" href={ad.banner_url || '#'} rel="noreferrer" target="_blank">
+                    Review creative
                   </a>
                 </div>
                 <div className="flex gap-2">
@@ -310,7 +314,7 @@ function StreamerDashboardContent({
               </div>
             </article>
           ))}
-          {!pendingBannerAds.length ? <div className="status-note">No paid banner URLs are waiting for approval.</div> : null}
+          {!pendingBannerAds.length ? <div className="status-note">No banner campaigns need approval right now.</div> : null}
         </div>
       </section>
     </div>

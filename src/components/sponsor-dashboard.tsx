@@ -32,6 +32,10 @@ type SponsorDashboardContentProps = {
   initialAds: AdRecord[];
 };
 
+function readableStatus(value: string | null | undefined) {
+  return (value || 'pending').replace(/_/g, ' ');
+}
+
 export function SponsorDashboard({
   streams,
   ads,
@@ -218,17 +222,17 @@ function SponsorDashboardContent({
   return (
     <div className="grid gap-6">
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon="stream" label="Directory" value={String(streams.length)} hint="Open stream inventory. Sponsors can browse without login." />
+        <MetricCard icon="stream" label="Inventory" value={String(streams.length)} hint="Available creator placements for sponsor bookings." />
         <MetricCard icon="activity" label="Ad types" value="Chart + Banner" hint="Chart ads activate after payment. Banner ads also require creator approval." />
-        <MetricCard icon="wallet" label="Your campaigns" value={String(myAds.length)} hint={authenticated ? 'Signed-in sponsors can track recent campaign checkouts.' : `Starting rate ${DEFAULT_AD_PRICE_SOL} SOL`} />
+        <MetricCard icon="wallet" label="Campaigns" value={String(myAds.length)} hint={authenticated ? 'Signed-in sponsors can track recent bookings.' : `Placements start at ${DEFAULT_AD_PRICE_SOL} SOL`} />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <div className={panelClassName}>
-          <div className="section-kicker">Sponsor checkout</div>
-          <h2 className="section-heading">Book a chart or banner placement</h2>
+          <div className="section-kicker">Sponsor booking</div>
+          <h2 className="section-heading">Book a live placement</h2>
           <p className="section-copy">
-            Pick a stream, choose the creative format, and create a payment request. You can use a direct HTTPS banner URL or upload to Filebase first.
+            Choose a creator, select the format, and confirm payment. Banner media runs after creator approval.
           </p>
           <div className="mt-6 grid gap-4">
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="sponsor-stream">
@@ -237,7 +241,7 @@ function SponsorDashboardContent({
                 {!streams.length ? <option value="">No streams available</option> : null}
                 {streams.map((stream) => (
                   <option key={stream.id} value={stream.id}>
-                    {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.display_name || stream.id.slice(0, 8)} · {isFreshHeartbeat(stream.last_heartbeat) ? 'Live' : 'Offline'}
+                    {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.display_name || 'Creator stream'} · {isFreshHeartbeat(stream.last_heartbeat) ? 'Live' : 'Available'}
                   </option>
                 ))}
               </select>
@@ -245,20 +249,20 @@ function SponsorDashboardContent({
             {loadingStreams ? (
               <div className="soft-card flex items-center gap-3 text-sm text-[var(--color-copy-soft)]">
                 <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin text-[var(--color-accent)]" />
-                Loading stream inventory...
+                Loading available placements...
               </div>
             ) : null}
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="ad-type">
               Ad type
               <select id="ad-type" className={fieldClassName} onChange={(event) => setAdType(event.target.value as typeof adType)} value={adType}>
-                <option value="chart">DexScreener chart</option>
-                <option value="banner">Banner creative</option>
+                <option value="chart">Live token chart</option>
+                <option value="banner">Approved banner</option>
               </select>
             </label>
             {adType === 'chart' ? (
               <>
                 <label className="grid gap-2 text-sm font-medium text-white" htmlFor="token-address">
-                  Token contract
+                  Token address
                   <input autoCapitalize="off" autoCorrect="off" id="token-address" className={fieldClassName} onChange={(event) => setTokenAddress(event.target.value)} placeholder="So11111111111111111111111111111111111111112" spellCheck={false} value={tokenAddress} />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-white" htmlFor="chain">
@@ -276,12 +280,12 @@ function SponsorDashboardContent({
             ) : (
               <div className="grid gap-4">
                 <label className="grid gap-2 text-sm font-medium text-white" htmlFor="banner-url">
-                  Banner URL
-                  <input autoComplete="url" id="banner-url" className={fieldClassName} inputMode="url" onChange={(event) => setBannerUrl(event.target.value)} placeholder="https://example.com/banner.png" type="url" value={bannerUrl} />
+                  Banner asset
+                  <input autoComplete="url" id="banner-url" className={fieldClassName} inputMode="url" onChange={(event) => setBannerUrl(event.target.value)} placeholder="Banner asset link" type="url" value={bannerUrl} />
                 </label>
                 <div className="soft-card grid gap-3">
                   <label className="grid gap-2 text-sm font-medium text-white" htmlFor="banner-file">
-                    Upload banner to Filebase
+                    Upload banner asset
                     <input
                       id="banner-file"
                       accept="image/png,image/jpeg,image/gif"
@@ -291,10 +295,10 @@ function SponsorDashboardContent({
                     />
                   </label>
                   <div className="text-sm text-[var(--color-copy-soft)]">
-                    Uploading is optional. If you already have a public HTTPS asset, paste the URL above instead.
+                    Add a ready-to-review banner asset for the creator.
                   </div>
                   <button className="secondary-button" disabled={!bannerFile || uploadingBanner} onClick={uploadBanner} type="button">
-                    {uploadingBanner ? 'Uploading...' : 'Upload to Filebase'}
+                    {uploadingBanner ? 'Uploading...' : 'Upload banner'}
                   </button>
                 </div>
               </div>
@@ -320,24 +324,24 @@ function SponsorDashboardContent({
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="advertiser-contact">
-              Contact
+              Campaign contact
               <input autoComplete="email" id="advertiser-contact" className={fieldClassName} onChange={(event) => setAdvertiserContact(event.target.value)} placeholder="email or @handle for campaign follow-up" value={advertiserContact} />
             </label>
             <div className="status-note">
-              Chart campaigns activate after payment verification. Banner campaigns also wait for creator approval before they render live.
+              Chart placements activate after payment. Banner placements also need creator approval.
             </div>
             <button aria-busy={submitting} className="primary-button" disabled={!selectedStreamId || submitting || (adType === 'chart' ? !tokenAddress : !bannerUrl)} onClick={submitCampaign} type="button">
-              {submitting ? 'Creating checkout...' : `Create ${selectedStream?.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL checkout`}
+              {submitting ? 'Preparing booking...' : `Book for ${selectedStream?.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL`}
             </button>
             {errorMessage ? <div className="status-note" data-tone="danger">{errorMessage}</div> : null}
             {createdPayment ? (
               <div className="soft-card text-sm text-[var(--color-copy-soft)]">
-                <div className="section-kicker text-[var(--color-accent-alt)]">Payment request</div>
+                <div className="section-kicker text-[var(--color-accent-alt)]">Payment</div>
                 <div className="mt-2 text-2xl font-semibold text-white">
                   {createdPayment.amount} {createdPayment.currency}
                 </div>
                 <div className="mt-3 text-xs uppercase tracking-[0.24em] text-[var(--color-copy-faint)]">
-                  {createdPayment.paymentRecipientKind === 'escrow' ? 'Escrow deposit address' : 'Streamer payout wallet'}
+                  {createdPayment.paymentRecipientKind === 'escrow' ? 'Deposit wallet' : 'Creator payout wallet'}
                 </div>
                 <div className="mt-1 break-all font-mono text-xs text-[var(--color-accent)]">{createdPayment.recipientAddress}</div>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -345,17 +349,17 @@ function SponsorDashboardContent({
                 </div>
                 {createdPayment.paymentRecipientKind === 'escrow' ? (
                   <div className="mt-4 text-sm leading-6 text-[var(--color-copy-soft)]">
-                    Final payout wallet: <span className="break-all font-mono text-[var(--color-accent)]">{createdPayment.paidToWallet}</span>
+                    Creator payout: <span className="break-all font-mono text-[var(--color-accent)]">{createdPayment.paidToWallet}</span>
                     {createdPayment.commissionBps ? (
                       <span className="mt-1 block">
-                        Pump commission: {(createdPayment.commissionBps / 100).toFixed(2)}% · streamer share {createdPayment.streamerAmount} SOL · platform fee {createdPayment.platformFeeAmount} SOL
+                        Pump commission {(createdPayment.commissionBps / 100).toFixed(2)}% · creator share {createdPayment.streamerAmount} SOL · platform fee {createdPayment.platformFeeAmount} SOL
                       </span>
                     ) : null}
                   </div>
                 ) : null}
                 <label className="mt-4 grid gap-2 text-sm font-medium text-white" htmlFor="tx-signature">
-                  Transaction signature
-                  <input autoCapitalize="off" autoCorrect="off" id="tx-signature" className={fieldClassName} onChange={(event) => setTxSignature(event.target.value)} placeholder="Paste Solana tx signature" spellCheck={false} value={txSignature} />
+                  Payment signature
+                  <input autoCapitalize="off" autoCorrect="off" id="tx-signature" className={fieldClassName} onChange={(event) => setTxSignature(event.target.value)} placeholder="Solana signature" spellCheck={false} value={txSignature} />
                 </label>
                 <button className="secondary-button mt-3" disabled={!txSignature || verifying} onClick={verifyPayment} type="button">
                   {verifying ? 'Verifying...' : 'Verify payment'}
@@ -363,9 +367,9 @@ function SponsorDashboardContent({
                 <div className="pill mt-3">
                   {paymentState === 'verified'
                     ? adType === 'banner'
-                      ? 'Paid · Waiting for creator approval'
-                      : 'Paid · Campaign ready'
-                    : 'Waiting for payment'}
+                      ? 'Paid · Awaiting approval'
+                      : 'Paid · Ready to run'
+                    : 'Awaiting payment'}
                 </div>
               </div>
             ) : null}
@@ -373,10 +377,10 @@ function SponsorDashboardContent({
         </div>
 
         <div className={panelClassName}>
-          <div className="section-kicker text-[var(--color-accent-alt)]">Open directory</div>
-          <h2 className="section-heading">Choose a stream with current inventory</h2>
+          <div className="section-kicker text-[var(--color-accent-alt)]">Creator inventory</div>
+          <h2 className="section-heading">Choose an available placement</h2>
           <p className="section-copy">
-            The directory shows each stream&apos;s platform, starting rate, and whether the OBS source is still checking in.
+            Compare platform, rate, and live availability before booking.
           </p>
           <div className="mt-4 grid gap-4">
             {streams.map((stream) => (
@@ -385,22 +389,22 @@ function SponsorDashboardContent({
                   <div>
                     <h3 className="text-lg font-semibold text-white">{stream.display_name || STREAM_PLATFORM_NAMES[stream.platform]}</h3>
                     <p className="mt-1 text-sm text-[var(--color-copy-soft)]">
-                      {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL · {isFreshHeartbeat(stream.last_heartbeat) ? 'Heartbeat live' : 'Offline or stale'}
+                      {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL · {isFreshHeartbeat(stream.last_heartbeat) ? 'Live now' : 'Available soon'}
                     </p>
                   </div>
                   <button className="secondary-button" onClick={() => setSelectedStreamId(stream.id)} type="button">
                     Select stream
                   </button>
                 </div>
-                <div className="mt-3 grid gap-1 text-xs text-[var(--color-copy-faint)]">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {stream.profile_url ? (
-                    <a className="break-all text-[var(--color-accent)]" href={stream.profile_url} rel="noreferrer" target="_blank">
-                      {stream.profile_url}
+                    <a className="secondary-button" href={stream.profile_url} rel="noreferrer" target="_blank">
+                      View profile
                     </a>
                   ) : null}
                   {stream.stream_url ? (
-                    <a className="break-all text-[var(--color-accent)]" href={stream.stream_url} rel="noreferrer" target="_blank">
-                      {stream.stream_url}
+                    <a className="secondary-button" href={stream.stream_url} rel="noreferrer" target="_blank">
+                      Watch stream
                     </a>
                   ) : null}
                 </div>
@@ -411,9 +415,9 @@ function SponsorDashboardContent({
                 <div className="flex items-start gap-3">
                   <WalletCards aria-hidden="true" className="mt-1 h-5 w-5 text-[var(--color-accent)]" />
                   <div>
-                    <h3 className="text-base font-semibold text-white">No streamer inventory yet</h3>
+                    <h3 className="text-base font-semibold text-white">No creator inventory yet</h3>
                     <p className="mt-2 text-sm leading-6 text-[var(--color-copy-soft)]">
-                      Check back after a creator registers a stream, or use the creator dashboard to add one first.
+                      New sponsor-ready placements will appear here as creators join.
                     </p>
                   </div>
                 </div>
@@ -425,10 +429,10 @@ function SponsorDashboardContent({
 
       {authenticated ? (
         <section className={panelClassName}>
-          <div className="section-kicker text-[var(--color-copy)]">Your recent campaigns</div>
-          <h2 className="section-heading">Signed-in sponsor history</h2>
+          <div className="section-kicker text-[var(--color-copy)]">Recent campaigns</div>
+          <h2 className="section-heading">Your sponsor activity</h2>
           <p className="section-copy">
-            Campaigns created while signed in are attributed to your sponsor profile so you can review status and follow-up details later.
+            Review booking status and campaign details from your sponsor profile.
           </p>
           <div className="mt-4 grid gap-4">
             {myAds.map((ad) => (
@@ -437,16 +441,20 @@ function SponsorDashboardContent({
                   <div>
                     <h3 className="text-base font-semibold text-white">{ad.ad_type === 'banner' ? 'Banner campaign' : 'Chart campaign'}</h3>
                     <p className="mt-1 text-sm text-[var(--color-copy-soft)]">
-                      {ad.status || 'pending'} · {ad.chain} · {ad.position} · {ad.size}
+                      {readableStatus(ad.status)} · {ad.chain} · {ad.position.replace('-', ' ')} · {ad.size}
                     </p>
                   </div>
                   <div className="pill">{ad.id.slice(0, 8)}</div>
                 </div>
-                {ad.banner_url ? <div className="mt-3 break-all text-xs text-[var(--color-accent)]">{ad.banner_url}</div> : null}
+                {ad.banner_url ? (
+                  <a className="secondary-button mt-3" href={ad.banner_url} rel="noreferrer" target="_blank">
+                    View banner
+                  </a>
+                ) : null}
                 {ad.token_address ? <div className="mt-3 break-all font-mono text-xs text-[var(--color-accent)]">{ad.token_address}</div> : null}
               </article>
             ))}
-            {!myAds.length ? <div className="status-note">No attributed campaigns yet. Create a checkout while signed in to populate this list.</div> : null}
+            {!myAds.length ? <div className="status-note">No campaigns yet. Book a placement while signed in to start your history.</div> : null}
           </div>
         </section>
       ) : null}
