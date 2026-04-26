@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { useMusic, type AudioFeatures } from '@/components/music-provider';
 
 type Particle = {
   x: number;
@@ -26,10 +27,16 @@ function clamp(value: number, min: number, max: number) {
 
 export function SiteBackground() {
   const pathname = usePathname();
+  const music = useMusic();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const featuresRef = useRef<AudioFeatures>(music.features);
 
   useEffect(() => {
-    if (DISABLED_ROUTES.has(pathname)) {
+    featuresRef.current = music.features;
+  }, [music.features]);
+
+  useEffect(() => {
+    if (DISABLED_ROUTES.has(pathname) || pathname?.startsWith('/overlay')) {
       return;
     }
 
@@ -101,6 +108,11 @@ export function SiteBackground() {
     }
 
     function drawBackdrop(time: number) {
+      const audio = featuresRef.current;
+      const energy = audio.isPlaying ? audio.volume : 0.08;
+      const bass = audio.isPlaying ? audio.bass : 0.05;
+      const mid = audio.isPlaying ? audio.mid : 0.04;
+      const high = audio.isPlaying ? audio.high : 0.04;
       const driftX = Math.sin(time * 0.00014) * width * 0.03;
       const driftY = Math.cos(time * 0.00012) * height * 0.04;
 
@@ -121,8 +133,8 @@ export function SiteBackground() {
         height * 0.38 + driftY * 0.5,
         Math.max(width, height) * 0.42,
       );
-      tealBloom.addColorStop(0, 'rgba(73, 197, 182, 0.18)');
-      tealBloom.addColorStop(0.35, 'rgba(39, 121, 167, 0.12)');
+      tealBloom.addColorStop(0, `rgba(73, 197, 182, ${0.14 + energy * 0.14})`);
+      tealBloom.addColorStop(0.35, `rgba(39, 121, 167, ${0.08 + mid * 0.14})`);
       tealBloom.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = tealBloom;
       ctx.fillRect(0, 0, width, height);
@@ -135,13 +147,13 @@ export function SiteBackground() {
         height * 0.22,
         Math.max(width, height) * 0.28,
       );
-      sideBloom.addColorStop(0, 'rgba(118, 167, 255, 0.14)');
-      sideBloom.addColorStop(0.45, 'rgba(39, 121, 167, 0.08)');
+      sideBloom.addColorStop(0, `rgba(118, 167, 255, ${0.1 + high * 0.16})`);
+      sideBloom.addColorStop(0.45, `rgba(39, 121, 167, ${0.06 + energy * 0.1})`);
       sideBloom.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = sideBloom;
       ctx.fillRect(0, 0, width, height);
 
-      const orbRadius = 72 + Math.sin(time * 0.0013) * 6;
+      const orbRadius = Math.min(width, height) * 0.105 + Math.sin(time * 0.0013) * 6 + bass * 26;
       const orb = ctx.createRadialGradient(
         width * 0.5,
         height * 0.44,
@@ -150,16 +162,63 @@ export function SiteBackground() {
         height * 0.44,
         orbRadius * 3.4,
       );
-      orb.addColorStop(0, 'rgba(73, 197, 182, 0.12)');
-      orb.addColorStop(0.4, 'rgba(39, 121, 167, 0.09)');
+      orb.addColorStop(0, `rgba(245, 251, 251, ${0.1 + energy * 0.08})`);
+      orb.addColorStop(0.18, `rgba(134, 182, 255, ${0.16 + high * 0.16})`);
+      orb.addColorStop(0.42, `rgba(73, 197, 182, ${0.12 + mid * 0.16})`);
       orb.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = orb;
       ctx.beginPath();
       ctx.arc(width * 0.5, height * 0.44, orbRadius * 3.4, 0, Math.PI * 2);
       ctx.fill();
+
+      drawEarthOrb(time, width * 0.5, height * 0.44, orbRadius, audio);
+    }
+
+    function drawEarthOrb(time: number, cx: number, cy: number, radius: number, audio: AudioFeatures) {
+      const energy = audio.isPlaying ? audio.volume : 0.08;
+      const bass = audio.isPlaying ? audio.bass : 0.04;
+      const high = audio.isPlaying ? audio.high : 0.04;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const earth = ctx.createRadialGradient(cx - radius * 0.35, cy - radius * 0.42, radius * 0.08, cx, cy, radius * 1.08);
+      earth.addColorStop(0, `rgba(245, 251, 251, ${0.7 + energy * 0.2})`);
+      earth.addColorStop(0.18, `rgba(134, 182, 255, ${0.48 + high * 0.24})`);
+      earth.addColorStop(0.5, `rgba(31, 125, 149, ${0.34 + energy * 0.2})`);
+      earth.addColorStop(1, 'rgba(6, 16, 21, 0.08)');
+      ctx.fillStyle = earth;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * (0.9 + bass * 0.08), 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.92, 0, Math.PI * 2);
+      ctx.clip();
+      for (let lane = -4; lane <= 4; lane += 1) {
+        const y = cy + lane * radius * 0.16 + Math.sin(time * 0.0015 + lane) * high * 7;
+        const laneWidth = Math.cos((lane / 5) * Math.PI * 0.5) * radius * 0.92;
+        ctx.strokeStyle = `rgba(124, 228, 210, ${0.09 + energy * 0.14})`;
+        ctx.lineWidth = 0.8 + bass * 1.2;
+        ctx.beginPath();
+        ctx.ellipse(cx, y, Math.abs(laneWidth), radius * 0.075, Math.sin(time * 0.0004) * 0.12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      for (let meridian = 0; meridian < 8; meridian += 1) {
+        const offset = ((meridian / 8) * Math.PI * 2 + time * 0.00035) % (Math.PI * 2);
+        ctx.strokeStyle = `rgba(134, 182, 255, ${0.06 + high * 0.14})`;
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, Math.abs(Math.cos(offset)) * radius * 0.92, radius * 0.92, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
 
     function drawParticles(time: number) {
+      const audio = featuresRef.current;
+      const energy = audio.isPlaying ? audio.volume : 0.08;
+      const bass = audio.isPlaying ? audio.bass : 0.04;
+      const high = audio.isPlaying ? audio.high : 0.04;
       const centerX = width * 0.5;
       const centerY = height * 0.44;
 
@@ -178,7 +237,7 @@ export function SiteBackground() {
         const dx = centerX - particle.x;
         const dy = centerY - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy) + 0.001;
-        const orbitForce = 0.0032;
+        const orbitForce = 0.0032 + energy * 0.004;
         const tangent = Math.atan2(dy, dx) + Math.PI / 2;
 
         particle.vx += Math.cos(tangent) * orbitForce;
@@ -190,8 +249,8 @@ export function SiteBackground() {
         const pdy = pointerY - particle.y;
         const pointerDistance = Math.sqrt(pdx * pdx + pdy * pdy) + 0.001;
         if (pointerDistance < 180) {
-          particle.vx += (pdx / pointerDistance) * 0.012;
-          particle.vy += (pdy / pointerDistance) * 0.012;
+          particle.vx += (pdx / pointerDistance) * (0.012 + bass * 0.018);
+          particle.vy += (pdy / pointerDistance) * (0.012 + bass * 0.018);
         }
 
         particle.vx *= 0.985;
@@ -212,8 +271,8 @@ export function SiteBackground() {
         const lifeRatio = clamp(particle.life / particle.maxLife, 0, 1);
         const paletteIndex = Math.floor(particle.hue * palette.length) % palette.length;
         const color = palette[paletteIndex];
-        const radius = particle.size * (0.65 + lifeRatio * 0.55);
-        const alpha = particle.alpha * lifeRatio;
+        const radius = particle.size * (0.65 + lifeRatio * 0.55 + high * 0.9);
+        const alpha = particle.alpha * lifeRatio * (0.8 + energy * 0.8);
 
         ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
         ctx.beginPath();
@@ -240,8 +299,8 @@ export function SiteBackground() {
             continue;
           }
 
-          ctx.strokeStyle = `rgba(73, 197, 182, ${(1 - distance / 90) * 0.08})`;
-          ctx.lineWidth = 0.6;
+          ctx.strokeStyle = `rgba(73, 197, 182, ${(1 - distance / 90) * (0.07 + energy * 0.08)})`;
+          ctx.lineWidth = 0.55 + bass * 0.7;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
@@ -273,7 +332,8 @@ export function SiteBackground() {
       pointerX = event.clientX;
       pointerY = event.clientY;
 
-      for (let i = 0; i < 2; i += 1) {
+      const burst = featuresRef.current.isPlaying ? 4 : 2;
+      for (let i = 0; i < burst; i += 1) {
         particles.push(spawn(false));
       }
 
@@ -310,7 +370,7 @@ export function SiteBackground() {
     };
   }, [pathname]);
 
-  if (DISABLED_ROUTES.has(pathname)) {
+  if (DISABLED_ROUTES.has(pathname) || pathname?.startsWith('/overlay')) {
     return null;
   }
 
