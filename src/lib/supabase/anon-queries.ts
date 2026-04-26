@@ -7,6 +7,15 @@ import { AdRecord, PaymentRecord, StreamPlatform, StreamRecord } from '@/lib/typ
 // every STREAM_HEARTBEAT_INTERVAL_MS (15s); 60s gives 4x slack before a stream falls off.
 const DIRECTORY_LIVE_WINDOW_MS = 60_000;
 
+function isMissingRelationError(error: unknown) {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === 'PGRST205',
+  );
+}
+
 export interface AnonStreamInput {
   ownerSession: string;
   platform: StreamPlatform;
@@ -61,6 +70,9 @@ export async function listStreamsByOwnerSession(ownerSession: string) {
     .returns<StreamRecord[]>();
 
   if (error) {
+    if (isMissingRelationError(error)) {
+      return [];
+    }
     throw error;
   }
 
@@ -126,6 +138,9 @@ export async function listLiveDirectoryStreams() {
     .returns<DirectoryStream[]>();
 
   if (error) {
+    if (isMissingRelationError(error)) {
+      return [];
+    }
     throw error;
   }
 
@@ -196,6 +211,9 @@ export async function listPublicFeed(limit = 60) {
     .limit(limit);
 
   if (error) {
+    if (isMissingRelationError(error)) {
+      return [];
+    }
     throw error;
   }
 
