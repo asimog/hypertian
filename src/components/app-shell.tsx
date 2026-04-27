@@ -33,10 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(124,228,210,0.42),_rgba(44,109,130,0.22)_55%,_rgba(8,16,19,0.1)_100%)] text-[var(--color-ink)]">
                 <TvMinimalPlay className="h-5 w-5" />
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-[0.32em] text-[var(--color-accent)]">Hypertian</div>
-                <div className="text-xs text-[var(--color-copy-soft)]">Livestream ad rails - free for now</div>
-              </div>
+              <div className="text-xs uppercase tracking-[0.32em] text-[var(--color-accent)]">Hypertian</div>
             </Link>
 
             <nav aria-label="Primary" className="flex flex-wrap items-center gap-1.5">
