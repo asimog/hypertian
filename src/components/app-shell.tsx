@@ -144,15 +144,11 @@ export function MetricCard({
   value: string;
   hint: string;
 }) {
-  const Icon = icon === 'wallet' ? Wallet : icon === 'activity' ? Activity : RadioTower;
   return (
-    <div className="panel rounded-[24px] p-5">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-[var(--color-accent)]">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-copy-faint)]">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
-      <p className="mt-1 text-xs text-[var(--color-copy-soft)]">{hint}</p>
+    <div className="panel rounded-[16px] p-3">
+      <div className="text-[9px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">{label}</div>
+      <div className="mt-0.5 text-xl font-semibold text-white">{value}</div>
+      <p className="text-[10px] text-[var(--color-copy-soft)]">{hint}</p>
     </div>
   );
 }

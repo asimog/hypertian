@@ -13,7 +13,7 @@ It focuses on:
 
 ## Current Product Reality
 
-As of April 25, 2026, the current codebase behaves like this:
+As of April 26, 2026, the current codebase behaves like this:
 
 - active creator/sponsor routes exist for `X Ads` and `PumpAds`
 - stream and sponsor dashboards depend on Privy-backed auth
@@ -23,6 +23,7 @@ As of April 25, 2026, the current codebase behaves like this:
 - verified escrow balances are swept automatically by the backend
 - banner ads currently rely on an HTTPS banner URL plus streamer review
 - DexScreener client data now uses polling instead of the older websocket path
+- Earth renderer uses memory-optimized packed lookup buffers (~33% reduction in per-pixel state)
 
 This matters because some older docs and comments still describe broader or earlier behavior.
 
@@ -262,6 +263,16 @@ npm run build
 ```
 
 `npm run pipeline` covers linting, typechecking, and tests.
+
+## Memory & Performance
+
+The Earth background renderer (used on most pages) has been optimized to reduce memory usage without affecting visual quality:
+
+- **Texture lookup buffers**: texU/texV/lambert values are now packed into a single interleaved `Uint8Array` (4 bytes per pixel) instead of three separate arrays (6 bytes per pixel). This reduces per-pixel state by ~33% and improves cache locality.
+- **Shared texture cache**: The generated earth texture is cached at the module level and shared across all renderer instances, avoiding redundant generation.
+- **Zero-fill optimization**: Out-of-disk pixels have their alpha pre-zeroed during setup, avoiding per-frame writes.
+
+These changes reduce resident GPU/CPU memory pressure while maintaining identical visual output and animation quality. The background music-reactive particle system and bloom effects are unchanged.
 
 ## Deployment Checklist
 

@@ -54,40 +54,40 @@ export function DirectoryView({ initialStreams }: Props) {
         </div>
       </header>
 
-      {!streams.length ? (
+       {!streams.length ? (
         <div className="soft-card text-sm text-[var(--color-copy-soft)]">
           No streams are live right now. Streams appear here automatically when an overlay heartbeat lands within the last 60 seconds.
         </div>
       ) : null}
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {streams.map((stream) => (
-          <article className="panel rounded-3xl p-5" key={stream.id}>
-            <div className="flex items-start justify-between gap-3">
+          <article className="panel rounded-2xl p-4" key={stream.id}>
+            <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="truncate text-base font-semibold text-white">
+                <div className="truncate text-sm font-semibold text-white">
                   {stream.display_name || STREAM_PLATFORM_NAMES[stream.platform]}
                 </div>
-                <div className="mt-1 text-xs text-[var(--color-copy-soft)]">
+                <div className="mt-0.5 text-[11px] text-[var(--color-copy-soft)]">
                   {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.price_sol ?? 0} SOL
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(124,228,210,0.5)] bg-[rgba(124,228,210,0.13)] px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-white">
-                <CheckCircle2 className="h-3 w-3" /> live
+              <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(124,228,210,0.5)] bg-[rgba(124,228,210,0.13)] px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-white">
+                live
               </span>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {stream.stream_url ? (
-                <a className="secondary-button" href={stream.stream_url} rel="noreferrer" target="_blank">
-                  <ExternalLink className="h-3.5 w-3.5" /> Watch
+                <a className="secondary-button h-8 px-3 text-[11px]" href={stream.stream_url} rel="noreferrer" target="_blank">
+                  Watch
                 </a>
               ) : null}
-              <button className="primary-button" onClick={() => setTarget({ stream, kind: 'chart' })} type="button">
-                <LineChart className="h-3.5 w-3.5" /> Request chart
+              <button className="primary-button h-8 px-3 text-[11px]" onClick={() => setTarget({ stream, kind: 'chart' })} type="button">
+                Request chart
               </button>
-              <button className="secondary-button" onClick={() => setTarget({ stream, kind: 'banner' })} type="button">
-                <ImagePlus className="h-3.5 w-3.5" /> Request media
+              <button className="secondary-button h-8 px-3 text-[11px]" onClick={() => setTarget({ stream, kind: 'banner' })} type="button">
+                Request media
               </button>
             </div>
           </article>

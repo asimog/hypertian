@@ -54,13 +54,13 @@ export function FeedView({ initialItems }: Props) {
         <div className="text-xs text-[var(--color-copy-faint)]">{items.length} cards · refreshed {timeAgo(refreshedAt)}</div>
       </header>
 
-      {!items.length ? (
+       {!items.length ? (
         <div className="soft-card text-sm text-[var(--color-copy-soft)]">
           No job cards yet. They appear here the moment someone requests an ad on the Directory.
         </div>
       ) : null}
 
-      <div className="grid gap-3">
+      <div className="grid gap-2">
         {items.map((item) => {
           const status = item.ad.status || 'pending_payment';
           const tone = STATUS_TONE[status] || STATUS_TONE.pending_payment;
@@ -68,59 +68,59 @@ export function FeedView({ initialItems }: Props) {
             .filter((p) => p.status === 'verified')
             .reduce((sum, p) => sum + Number(p.amount || 0), 0);
           return (
-            <article className="panel rounded-3xl p-5" key={item.ad.id}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+            <article className="panel rounded-2xl p-4" key={item.ad.id}>
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">
+                  <div className="text-[9px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">
                     Job · {item.ad.id.slice(0, 8)}
                   </div>
-                  <div className="mt-1 text-base font-semibold text-white">
+                  <div className="mt-0.5 text-sm font-semibold text-white">
                     {item.ad.ad_type === 'banner' ? 'Media banner' : 'Token chart'}
                     {item.stream ? ` → ${item.stream.display_name || STREAM_PLATFORM_NAMES[item.stream.platform]}` : ''}
                   </div>
-                  <div className="mt-1 text-xs text-[var(--color-copy-soft)]">
+                  <div className="mt-0.5 text-[10px] text-[var(--color-copy-soft)]">
                     {item.ad.position} · {item.ad.size} · {item.ad.duration_minutes ?? 5} min
                   </div>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.18em] ${tone}`}>
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] ${tone}`}>
                   {status.replace(/_/g, ' ')}
                 </span>
               </div>
 
-              <dl className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                  <dt className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">Token</dt>
-                  <dd className="mt-1 break-all font-mono text-xs text-[var(--color-copy)]">
+              <dl className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2">
+                  <dt className="text-[9px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">Token</dt>
+                  <dd className="mt-0.5 break-all font-mono text-[10px] text-[var(--color-copy)]">
                     {item.ad.ad_type === 'chart' ? item.ad.token_address || '—' : '—'}
                   </dd>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                  <dt className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">Banner</dt>
-                  <dd className="mt-1 truncate text-xs text-[var(--color-copy)]">
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2">
+                  <dt className="text-[9px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">Banner</dt>
+                  <dd className="mt-0.5 truncate text-[10px] text-[var(--color-copy)]">
                     {item.ad.banner_url ? (
                       <a className="inline-flex items-center gap-1 text-[var(--color-accent)] underline" href={item.ad.banner_url} rel="noreferrer" target="_blank">
-                        view <ExternalLink className="h-3 w-3" />
+                        view
                       </a>
                     ) : (
                       '—'
                     )}
                   </dd>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                  <dt className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">Paid</dt>
-                  <dd className="mt-1 text-xs text-[var(--color-copy)]">{totalPaid > 0 ? `${totalPaid} SOL` : '—'}</dd>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2">
+                  <dt className="text-[9px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">Paid</dt>
+                  <dd className="mt-0.5 text-[10px] text-[var(--color-copy)]">{totalPaid > 0 ? `${totalPaid} SOL` : '—'}</dd>
                 </div>
               </dl>
 
               {item.payments.length ? (
-                <ul className="mt-3 grid gap-1 text-xs text-[var(--color-copy-soft)]">
+                <ul className="mt-2 grid gap-1 text-[10px] text-[var(--color-copy-soft)]">
                   {item.payments.map((p) => (
-                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-2 py-1.5">
-                      <span className="font-mono text-[10px] text-[var(--color-copy-faint)]">payment · {p.id.slice(0, 8)}</span>
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-1 rounded-xl border border-white/5 bg-white/[0.02] px-2 py-1">
+                      <span className="font-mono text-[9px] text-[var(--color-copy-faint)]">payment · {p.id.slice(0, 8)}</span>
                       <span>{p.amount} {p.currency}</span>
-                      <span className="uppercase tracking-[0.18em] text-[10px]">{p.status}</span>
+                      <span className="uppercase tracking-[0.18em] text-[9px]">{p.status}</span>
                       {p.tx_hash ? (
-                        <a className="font-mono text-[10px] text-[var(--color-accent)] underline" href={`https://solscan.io/tx/${p.tx_hash}`} rel="noreferrer" target="_blank">
+                        <a className="font-mono text-[9px] text-[var(--color-accent)] underline" href={`https://solscan.io/tx/${p.tx_hash}`} rel="noreferrer" target="_blank">
                           {p.tx_hash.slice(0, 8)}…
                         </a>
                       ) : null}
