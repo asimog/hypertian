@@ -380,6 +380,11 @@ Use this when:
 - you want server-side reconciliation of pending payments
 - you do not want to rely only on client-driven verification polling
 
+Scheduler:
+
+- Supabase `pg_cron` job `poll-pending-payments` calls this route every 5 minutes
+- The bearer token is stored in the Supabase cron job definition, not in the repo
+
 ## Troubleshooting
 
 ### Stream dashboard says the user must be synced

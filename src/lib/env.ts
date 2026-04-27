@@ -1,35 +1,37 @@
 import { z } from 'zod';
 
+const optionalEnvString = (schema: z.ZodString) => z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
+
 const publicEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
-  NEXT_PUBLIC_PRIVY_APP_ID: z.string().min(1).optional(),
-  NEXT_PUBLIC_SOLANA_RPC_URL: z.string().url().optional(),
-  NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA: z.string().min(32).optional(),
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_URL: optionalEnvString(z.string().url()),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalEnvString(z.string().min(1)),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optionalEnvString(z.string().min(1)),
+  NEXT_PUBLIC_PRIVY_APP_ID: optionalEnvString(z.string().min(1)),
+  NEXT_PUBLIC_SOLANA_RPC_URL: optionalEnvString(z.string().url()),
+  NEXT_PUBLIC_PLATFORM_TREASURY_SOLANA: optionalEnvString(z.string().min(32)),
+  NEXT_PUBLIC_SITE_URL: optionalEnvString(z.string().url()),
+  NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: optionalEnvString(z.string().url()),
 });
 
 const serverEnvSchema = publicEnvSchema.extend({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  PRIVY_APP_SECRET: z.string().min(1).optional(),
-  PRIVY_VERIFICATION_KEY: z.string().optional(),
-  HELIUS_RPC_URL: z.string().url().optional(),
-  CRON_SECRET: z.string().min(1).optional(),
-  OVERLAY_SIGNING_SECRET: z.string().min(1).optional(),
-  ESCROW_ENCRYPTION_SECRET: z.string().min(1).optional(),
-  FILEBASE_ACCESS_KEY_ID: z.string().min(1).optional(),
-  FILEBASE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
-  FILEBASE_BUCKET: z.string().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: optionalEnvString(z.string().min(1)),
+  PRIVY_APP_SECRET: optionalEnvString(z.string().min(1)),
+  PRIVY_VERIFICATION_KEY: optionalEnvString(z.string()),
+  HELIUS_RPC_URL: optionalEnvString(z.string().url()),
+  CRON_SECRET: optionalEnvString(z.string().min(1)),
+  OVERLAY_SIGNING_SECRET: optionalEnvString(z.string().min(1)),
+  ESCROW_ENCRYPTION_SECRET: optionalEnvString(z.string().min(1)),
+  FILEBASE_ACCESS_KEY_ID: optionalEnvString(z.string().min(1)),
+  FILEBASE_SECRET_ACCESS_KEY: optionalEnvString(z.string().min(1)),
+  FILEBASE_BUCKET: optionalEnvString(z.string().min(1)),
 });
 
 const filebaseEnvSchema = z.object({
   FILEBASE_ACCESS_KEY_ID: z.string().min(1),
   FILEBASE_SECRET_ACCESS_KEY: z.string().min(1),
   FILEBASE_BUCKET: z.string().min(1),
-  NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: optionalEnvString(z.string().url()),
 });
 
 export function getPublicEnv() {

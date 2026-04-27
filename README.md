@@ -227,6 +227,7 @@ npm run build
 
 - Vercel deployment is supported by `vercel.json`
 - `GET /api/cron/payments` is protected by `Authorization: Bearer $CRON_SECRET`
+- Supabase `pg_cron` runs `poll-pending-payments` every 5 minutes and calls the protected cron route
 - `HELIUS_RPC_URL` should be treated as the production RPC for payment verification
 - `OVERLAY_SIGNING_SECRET` and `ESCROW_ENCRYPTION_SECRET` should be set explicitly in production
 - Filebase uploads are optional and separate from the default HTTPS banner URL flow

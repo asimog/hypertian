@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { getFilebaseEnv, getSolanaRpcUrl, isFilebaseEnabled } from '../src/lib/env';
+import { getFilebaseEnv, getPublicEnv, getSolanaRpcUrl, isFilebaseEnabled } from '../src/lib/env';
 
 const originalEnv = process.env;
 const envKeys = [
@@ -9,6 +9,7 @@ const envKeys = [
   'FILEBASE_SECRET_ACCESS_KEY',
   'FILEBASE_BUCKET',
   'NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL',
+  'NEXT_PUBLIC_PRIVY_APP_ID',
 ] as const;
 
 describe('environment helpers', () => {
@@ -47,5 +48,11 @@ describe('environment helpers', () => {
       FILEBASE_BUCKET: 'hypertian',
       NEXT_PUBLIC_FILEBASE_PUBLIC_BASE_URL: 'https://hypertian.s3.filebase.com',
     });
+  });
+
+  it('treats blank optional public env values as disabled', () => {
+    process.env.NEXT_PUBLIC_PRIVY_APP_ID = '';
+
+    expect(getPublicEnv().NEXT_PUBLIC_PRIVY_APP_ID).toBeUndefined();
   });
 });

@@ -600,13 +600,13 @@ export async function getPayment(paymentId: string) {
 
 export async function verifyPayment(input: { paymentId: string; txHash: string }) {
   const supabase = createAdminClient();
-  const verifiedAt = new Date().toISOString();
+  const now = new Date();
   const { data: payment, error: paymentError } = await supabase
     .from('payments')
     .update({
       tx_hash: input.txHash,
       status: 'verified',
-      verified_at: verifiedAt,
+      verified_at: now.toISOString(),
     })
     .eq('id', input.paymentId)
     .select()
@@ -615,9 +615,31 @@ export async function verifyPayment(input: { paymentId: string; txHash: string }
     throw paymentError;
   }
 
+  const { data: ad, error: fetchAdError } = await supabase
+    .from('ads')
+    .select('*')
+    .eq('id', payment.ad_id)
+    .single<AdRecord>();
+  if (fetchAdError) {
+    throw fetchAdError;
+  }
+
+  const activation = getPaidAdActivationState({
+    adType: ad.ad_type,
+    durationMinutes: ad.duration_minutes,
+    existingExpiresAt: ad.expires_at,
+    now,
+  });
+
   const { error: adError } = await supabase
     .from('ads')
-    .update({ is_active: true })
+    .update({
+      payment_tx_signature: input.txHash,
+      status: activation.status,
+      is_active: activation.isActive,
+      starts_at: activation.startsAt,
+      expires_at: activation.expiresAt,
+    })
     .eq('id', payment.ad_id);
   if (adError) {
     throw adError;
