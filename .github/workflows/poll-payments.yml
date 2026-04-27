@@ -1,0 +1,25 @@
+name: Poll pending payments
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Hit /api/cron/payments
+        run: |
+          response=$(curl -sS -o /tmp/body.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://hypertian.com/api/cron/payments)
+          cat /tmp/body.json
+          echo
+          test "$response" = "200" || { echo "HTTP $response"; exit 1; }
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
