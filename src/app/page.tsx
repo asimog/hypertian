@@ -5,20 +5,18 @@ export default function HomePage() {
   return (
     <div className="home-outer">
       <header className="home-brand" aria-labelledby="home-title">
-        <div className="home-kicker">Hypertian</div>
         <h1 className="home-display-title" id="home-title">
-          Livestream ad rails
+          <span aria-hidden="true">
+            HyperTian<span className="home-blink-x">X</span>
+          </span>
+          <span className="sr-only">HyperTianX</span>
         </h1>
-        <p className="home-subtitle">
-          Creator-owned inventory, transparent job cards, live overlays, and an audio-reactive workspace.
-        </p>
       </header>
 
       <nav aria-label="Primary routes" className="home-grid-wrap">
         <div className="home-grid">
           {boxes.map((box) => (
             <Link className="home-box" href={box.href} key={box.href}>
-              <span className="home-box-num">{box.num}</span>
               <box.Icon aria-hidden className="home-box-icon" />
               <span className="home-box-eyebrow">{box.eyebrow}</span>
               <h2 className="home-box-title">{box.title}</h2>
@@ -34,7 +32,6 @@ export default function HomePage() {
 const boxes = [
   {
     href: '/streamer',
-    num: '01',
     eyebrow: 'Creator',
     title: 'Streamer',
     desc: 'Create an anonymous stream profile, copy your OBS overlay, and approve banner requests.',
@@ -42,7 +39,6 @@ const boxes = [
   },
   {
     href: '/directory',
-    num: '02',
     eyebrow: 'Live',
     title: 'Directory',
     desc: 'Browse fresh heartbeat streams and request chart or media placements.',
@@ -50,7 +46,6 @@ const boxes = [
   },
   {
     href: '/feed',
-    num: '03',
     eyebrow: 'Ledger',
     title: 'Feed',
     desc: 'Track every ad job and payment with public status cards and receipts.',
@@ -58,7 +53,6 @@ const boxes = [
   },
   {
     href: '/music',
-    num: '04',
     eyebrow: 'Audio',
     title: 'Music',
     desc: 'Play music across the site while the global orb and particles react to sound.',

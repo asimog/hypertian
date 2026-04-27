@@ -3,6 +3,7 @@
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { Disc3, Pause, Play, SkipBack, SkipForward, Upload } from 'lucide-react';
 import { useMusic } from '@/components/music-provider';
+import { createEarthRenderer } from '@/components/earth-renderer';
 
 export function MusicExperience() {
   const music = useMusic();
@@ -26,7 +27,9 @@ export function MusicExperience() {
 
     let raf = 0;
     let time = 0;
+    let rotation = 0;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const earth = createEarthRenderer(384);
 
     function resize() {
       const rect = canvas.getBoundingClientRect();
@@ -44,7 +47,7 @@ export function MusicExperience() {
       const audio = featuresRef.current;
       const energy = audio.isPlaying ? audio.volume : 0.08;
       const bass = audio.isPlaying ? audio.bass : 0.06;
-      const radius = Math.min(width, height) * (0.18 + bass * 0.035);
+      const radius = Math.min(width, height) * (0.18 + bass * 0.085 + energy * 0.022);
 
       ctx.clearRect(0, 0, width, height);
 
@@ -74,47 +77,47 @@ export function MusicExperience() {
         ctx.stroke();
       }
 
-      const earth = ctx.createRadialGradient(cx - radius * 0.34, cy - radius * 0.38, radius * 0.08, cx, cy, radius);
-      earth.addColorStop(0, '#f5fbfb');
-      earth.addColorStop(0.16, '#86b6ff');
-      earth.addColorStop(0.48, '#1f7d95');
-      earth.addColorStop(0.74, '#0d4558');
-      earth.addColorStop(1, '#061015');
-      ctx.fillStyle = earth;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fill();
+      rotation += 0.0012 + bass * 0.018 + energy * 0.004;
+
+      if (earth) {
+        earth.redraw(rotation, energy * 0.22, audio.high);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(earth.buffer, cx - radius, cy - radius, radius * 2, radius * 2);
+        ctx.restore();
+      } else {
+        const fallback = ctx.createRadialGradient(cx - radius * 0.34, cy - radius * 0.38, radius * 0.08, cx, cy, radius);
+        fallback.addColorStop(0, '#5fbf6a');
+        fallback.addColorStop(0.4, '#1f7d95');
+        fallback.addColorStop(1, '#061015');
+        ctx.fillStyle = fallback;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const rim = ctx.createRadialGradient(cx, cy, radius * 0.88, cx, cy, radius * 1.14);
+      rim.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      rim.addColorStop(0.6, `rgba(134, 182, 255, ${0.22 + audio.high * 0.34})`);
+      rim.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = rim;
       ctx.beginPath();
-      ctx.arc(cx, cy, radius * 0.98, 0, Math.PI * 2);
-      ctx.clip();
-      for (let lane = -5; lane <= 5; lane += 1) {
-        const y = cy + lane * radius * 0.17 + Math.sin(time + lane) * audio.mid * 8;
-        const laneWidth = Math.cos((lane / 6) * Math.PI * 0.5) * radius;
-        ctx.strokeStyle = `rgba(124, 228, 210, ${0.14 + audio.high * 0.2})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.ellipse(cx, y, Math.abs(laneWidth), radius * 0.08, Math.sin(time * 0.4) * 0.1, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      for (let meridian = 0; meridian < 9; meridian += 1) {
-        const offset = ((meridian / 9) * Math.PI * 2 + time * 0.35) % (Math.PI * 2);
-        ctx.strokeStyle = `rgba(134, 182, 255, ${0.08 + audio.mid * 0.12})`;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, Math.abs(Math.cos(offset)) * radius, radius, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
+      ctx.arc(cx, cy, radius * 1.14, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
 
       const particles = 130;
       for (let i = 0; i < particles; i += 1) {
-        const angle = (i / particles) * Math.PI * 2 + time * (0.12 + audio.high * 0.08);
-        const lane = 1.25 + ((i % 17) / 17) * (0.9 + audio.volume * 0.4);
-        const pulse = Math.sin(time * 3 + i) * radius * 0.04 * (0.2 + audio.bass);
+        const angle = (i / particles) * Math.PI * 2 + time * (0.12 + audio.high * 0.14);
+        const lane = 1.25 + ((i % 17) / 17) * (0.9 + audio.volume * 0.55);
+        const pulse = Math.sin(time * 3 + i) * radius * 0.06 * (0.2 + audio.bass * 1.4);
         const x = cx + Math.cos(angle) * radius * lane + pulse;
         const y = cy + Math.sin(angle * 1.4) * radius * lane * 0.52;
-        const size = 1 + ((i % 5) / 5) * 1.8 + audio.high * 2;
+        const size = 1 + ((i % 5) / 5) * 1.8 + audio.high * 2.8;
         ctx.fillStyle = i % 4 === 0 ? 'rgba(245, 251, 251, 0.86)' : 'rgba(124, 228, 210, 0.58)';
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
@@ -122,10 +125,10 @@ export function MusicExperience() {
       }
 
       if (audio.beat) {
-        ctx.strokeStyle = 'rgba(245, 251, 251, 0.34)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(245, 251, 251, ${0.55 + audio.bass * 0.25})`;
+        ctx.lineWidth = 2.4 + audio.bass * 1.6;
         ctx.beginPath();
-        ctx.arc(cx, cy, radius * (1.18 + audio.bass * 0.6), 0, Math.PI * 2);
+        ctx.arc(cx, cy, radius * (1.18 + audio.bass * 0.85), 0, Math.PI * 2);
         ctx.stroke();
       }
 

@@ -363,13 +363,6 @@ textarea:focus-visible {
   text-align: center;
 }
 
-.home-kicker {
-  font-size: 0.78rem;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-}
-
 .home-display-title {
   max-width: 13ch;
   color: #ffffff;
@@ -380,11 +373,22 @@ textarea:focus-visible {
   text-wrap: balance;
 }
 
-.home-subtitle {
-  max-width: 44rem;
-  color: var(--color-copy-soft);
-  font-size: clamp(0.98rem, 2vw, 1.15rem);
-  line-height: 1.7;
+.home-blink-x {
+  display: inline-block;
+  color: var(--color-accent);
+  animation: home-blink 1.05s steps(1, end) infinite;
+}
+
+@keyframes home-blink {
+  0%, 55% { opacity: 1; }
+  55.01%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-blink-x {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .home-grid-wrap {
@@ -422,15 +426,6 @@ textarea:focus-visible {
 .home-box:hover {
   transform: translateY(-2px);
   border-color: rgba(124, 228, 210, 0.38);
-}
-
-.home-box-num {
-  position: absolute;
-  left: 1.1rem;
-  top: 1rem;
-  color: rgba(245, 251, 251, 0.34);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
 }
 
 .home-box-icon {

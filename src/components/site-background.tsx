@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useMusic, type AudioFeatures } from '@/components/music-provider';
+import { createEarthRenderer, type EarthRenderer } from '@/components/earth-renderer';
 
 type Particle = {
   x: number;
@@ -65,6 +66,8 @@ export function SiteBackground() {
     let pointerY = 0;
     let lastTime = performance.now();
     let idlePhase = 0;
+    let rotation = 0;
+    const earth: EarthRenderer | null = createEarthRenderer(256);
 
     const particleCount = window.innerWidth < 768 ? 96 : 210;
     const particles: Particle[] = [];
@@ -153,65 +156,70 @@ export function SiteBackground() {
       ctx.fillStyle = sideBloom;
       ctx.fillRect(0, 0, width, height);
 
-      const orbRadius = Math.min(width, height) * 0.105 + Math.sin(time * 0.0013) * 6 + bass * 26;
-      const orb = ctx.createRadialGradient(
-        width * 0.5,
-        height * 0.44,
-        0,
-        width * 0.5,
-        height * 0.44,
-        orbRadius * 3.4,
-      );
-      orb.addColorStop(0, `rgba(245, 251, 251, ${0.1 + energy * 0.08})`);
-      orb.addColorStop(0.18, `rgba(134, 182, 255, ${0.16 + high * 0.16})`);
-      orb.addColorStop(0.42, `rgba(73, 197, 182, ${0.12 + mid * 0.16})`);
-      orb.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = orb;
+      const orbRadius = Math.min(width, height) * 0.115 + Math.sin(time * 0.0013) * 6 + bass * 38 + energy * 14;
+      const cx = width * 0.5;
+      const cy = height * 0.44;
+
+      const halo = ctx.createRadialGradient(cx, cy, orbRadius * 0.9, cx, cy, orbRadius * 3.6);
+      halo.addColorStop(0, `rgba(245, 251, 251, ${0.08 + energy * 0.1})`);
+      halo.addColorStop(0.22, `rgba(134, 182, 255, ${0.14 + high * 0.2})`);
+      halo.addColorStop(0.5, `rgba(73, 197, 182, ${0.1 + mid * 0.18})`);
+      halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(width * 0.5, height * 0.44, orbRadius * 3.4, 0, Math.PI * 2);
+      ctx.arc(cx, cy, orbRadius * 3.6, 0, Math.PI * 2);
       ctx.fill();
 
-      drawEarthOrb(time, width * 0.5, height * 0.44, orbRadius, audio);
+      drawEarthOrb(cx, cy, orbRadius, audio);
     }
 
-    function drawEarthOrb(time: number, cx: number, cy: number, radius: number, audio: AudioFeatures) {
-      const energy = audio.isPlaying ? audio.volume : 0.08;
-      const bass = audio.isPlaying ? audio.bass : 0.04;
-      const high = audio.isPlaying ? audio.high : 0.04;
+    function drawEarthOrb(cx: number, cy: number, radius: number, audio: AudioFeatures) {
+      const energy = audio.isPlaying ? audio.volume : 0.04;
+      const bass = audio.isPlaying ? audio.bass : 0.02;
+      const high = audio.isPlaying ? audio.high : 0.03;
+
+      rotation += 0.0009 + bass * 0.012 + energy * 0.003;
+
+      if (earth) {
+        earth.redraw(rotation, energy * 0.18, high);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(earth.buffer, cx - radius, cy - radius, radius * 2, radius * 2);
+        ctx.restore();
+      } else {
+        const fallback = ctx.createRadialGradient(cx - radius * 0.35, cy - radius * 0.4, radius * 0.1, cx, cy, radius);
+        fallback.addColorStop(0, '#5fbf6a');
+        fallback.addColorStop(0.5, '#1f7d95');
+        fallback.addColorStop(1, '#061015');
+        ctx.fillStyle = fallback;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
-      const earth = ctx.createRadialGradient(cx - radius * 0.35, cy - radius * 0.42, radius * 0.08, cx, cy, radius * 1.08);
-      earth.addColorStop(0, `rgba(245, 251, 251, ${0.7 + energy * 0.2})`);
-      earth.addColorStop(0.18, `rgba(134, 182, 255, ${0.48 + high * 0.24})`);
-      earth.addColorStop(0.5, `rgba(31, 125, 149, ${0.34 + energy * 0.2})`);
-      earth.addColorStop(1, 'rgba(6, 16, 21, 0.08)');
-      ctx.fillStyle = earth;
+      const rim = ctx.createRadialGradient(cx, cy, radius * 0.86, cx, cy, radius * 1.12);
+      rim.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      rim.addColorStop(0.55, `rgba(134, 182, 255, ${0.18 + high * 0.3})`);
+      rim.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = rim;
       ctx.beginPath();
-      ctx.arc(cx, cy, radius * (0.9 + bass * 0.08), 0, Math.PI * 2);
+      ctx.arc(cx, cy, radius * 1.12, 0, Math.PI * 2);
       ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius * 0.92, 0, Math.PI * 2);
-      ctx.clip();
-      for (let lane = -4; lane <= 4; lane += 1) {
-        const y = cy + lane * radius * 0.16 + Math.sin(time * 0.0015 + lane) * high * 7;
-        const laneWidth = Math.cos((lane / 5) * Math.PI * 0.5) * radius * 0.92;
-        ctx.strokeStyle = `rgba(124, 228, 210, ${0.09 + energy * 0.14})`;
-        ctx.lineWidth = 0.8 + bass * 1.2;
-        ctx.beginPath();
-        ctx.ellipse(cx, y, Math.abs(laneWidth), radius * 0.075, Math.sin(time * 0.0004) * 0.12, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      for (let meridian = 0; meridian < 8; meridian += 1) {
-        const offset = ((meridian / 8) * Math.PI * 2 + time * 0.00035) % (Math.PI * 2);
-        ctx.strokeStyle = `rgba(134, 182, 255, ${0.06 + high * 0.14})`;
-        ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, Math.abs(Math.cos(offset)) * radius * 0.92, radius * 0.92, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
       ctx.restore();
+
+      if (audio.beat) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(245, 251, 251, ${0.4 + bass * 0.3})`;
+        ctx.lineWidth = 1.6 + bass * 2.2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * (1.06 + bass * 0.18), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     function drawParticles(time: number) {
@@ -237,7 +245,7 @@ export function SiteBackground() {
         const dx = centerX - particle.x;
         const dy = centerY - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy) + 0.001;
-        const orbitForce = 0.0032 + energy * 0.004;
+        const orbitForce = 0.0032 + energy * 0.006;
         const tangent = Math.atan2(dy, dx) + Math.PI / 2;
 
         particle.vx += Math.cos(tangent) * orbitForce;
@@ -271,8 +279,8 @@ export function SiteBackground() {
         const lifeRatio = clamp(particle.life / particle.maxLife, 0, 1);
         const paletteIndex = Math.floor(particle.hue * palette.length) % palette.length;
         const color = palette[paletteIndex];
-        const radius = particle.size * (0.65 + lifeRatio * 0.55 + high * 0.9);
-        const alpha = particle.alpha * lifeRatio * (0.8 + energy * 0.8);
+        const radius = particle.size * (0.65 + lifeRatio * 0.55 + high * 1.3);
+        const alpha = particle.alpha * lifeRatio * (0.8 + energy * 1.1);
 
         ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
         ctx.beginPath();
