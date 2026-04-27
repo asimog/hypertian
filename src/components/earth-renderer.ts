@@ -127,7 +127,7 @@ export function createEarthRenderer(size: number): EarthRenderer | null {
       const d2 = sx * sx + sy * sy;
       const idx = py * size + px;
       if (d2 > 1) {
-        texDataU16[idx] = SENTINEL;
+        texDataU16[idx * 2] = SENTINEL;
         texData[idx * 4 + 2] = 0;
         texData[idx * 4 + 3] = 0;
         bufferData[idx * 4 + 3] = 0;
@@ -142,7 +142,7 @@ export function createEarthRenderer(size: number): EarthRenderer | null {
       if (u >= TEX_W) u -= TEX_W;
       else if (u < 0) u += TEX_W;
       const lit = sx * lxN + sy * lyN + sz * lzN;
-      texDataU16[idx] = u;
+      texDataU16[idx * 2] = u;
       texData[idx * 4 + 2] = v < 255 ? v : 255;
       texData[idx * 4 + 3] = lit > 0 ? Math.min(255, (lit * 255) | 0) : 0;
     }
@@ -154,7 +154,7 @@ export function createEarthRenderer(size: number): EarthRenderer | null {
     let rotShift = ((rotation / twoPi) * TEX_W) | 0;
     rotShift = ((rotShift % TEX_W) + TEX_W) % TEX_W;
     for (let i = 0; i < total; i += 1) {
-      const baseU = texDataU16[i];
+      const baseU = texDataU16[i * 2];
       if (baseU === SENTINEL) continue;
       let u = baseU + rotShift;
       if (u >= TEX_W) u -= TEX_W;
