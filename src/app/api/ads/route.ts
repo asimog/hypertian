@@ -2,6 +2,7 @@ import { getPairsByTokenAddress } from '@/lib/dexscreener';
 import { fail, ok } from '@/lib/http';
 import { adTypeSchema, assertHttpsUrl } from '@/lib/platform';
 import { getOptionalPrivyUser } from '@/lib/privy';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { createAdWithDirectPayment, getStreamById, getUserByPrivyId, listActiveAdsForStream } from '@/lib/supabase/queries';
 import { AdRecord, OverlayActiveAd } from '@/lib/types';
 import { z } from 'zod';
@@ -56,6 +57,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = schema.parse(await request.json());
+    const rateLimit = await checkRateLimit(
+      request,
+      { bucket: 'public_ad_create', maxAttempts: 10, windowSeconds: 60 * 60 },
+      body.streamId,
+    );
+    if (!rateLimit.allowed) {
+      return fail('Too many ad checkouts created. Please try again later.', 429, {
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      });
+    }
+
     const claims = await getOptionalPrivyUser();
     const sponsor = claims?.user_id ? await getUserByPrivyId(claims.user_id) : null;
     let dexPairAddress: string | null = null;

@@ -5,6 +5,7 @@ import { getSiteUrl } from '@/lib/env';
 import { createOverlayHeartbeatKey } from '@/lib/overlay-auth';
 import { generateOwnerSession, getOwnerSessionFromCookie, setOwnerSessionCookie } from '@/lib/owner-session';
 import { assertHttpsUrl, assertSolanaWallet, sanitizeOptionalHttpsUrl, streamPlatformSchema } from '@/lib/platform';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { createAnonymousStream, listOwnerPendingBannerAds, listStreamsByOwnerSession } from '@/lib/supabase/anon-queries';
 
 export const dynamic = 'force-dynamic';
@@ -51,6 +52,18 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const currentSession = await getOwnerSessionFromCookie();
+    const rateLimit = await checkRateLimit(
+      request,
+      { bucket: 'public_stream_create', maxAttempts: 5, windowSeconds: 60 * 60 },
+      currentSession,
+    );
+    if (!rateLimit.allowed) {
+      return fail('Too many stream profiles created. Please try again later.', 429, {
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      });
+    }
+
     const body = schema.parse(await request.json());
     const profileUrl = assertHttpsUrl(body.profileUrl, 'Profile URL');
     const streamUrl = assertHttpsUrl(body.streamUrl, 'Stream URL');
@@ -66,7 +79,7 @@ export async function POST(request: Request) {
         ? assertSolanaWallet(body.pumpDeployerWallet ?? '', 'Pump deployer wallet')
         : assertSolanaWallet(body.payoutWallet ?? '', 'Payout wallet');
 
-    let session = await getOwnerSessionFromCookie();
+    let session = currentSession;
     if (!session) {
       session = generateOwnerSession();
       await setOwnerSessionCookie(session);

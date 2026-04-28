@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getUserByPrivyId: vi.fn(),
   getOptionalPrivyUser: vi.fn(),
   listActiveAdsForStream: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock('@/lib/dexscreener', () => ({
@@ -15,6 +16,10 @@ vi.mock('@/lib/dexscreener', () => ({
 
 vi.mock('@/lib/privy', () => ({
   getOptionalPrivyUser: mocks.getOptionalPrivyUser,
+}));
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: mocks.checkRateLimit,
 }));
 
 vi.mock('@/lib/supabase/queries', () => ({
@@ -39,6 +44,7 @@ describe('/api/ads', () => {
     vi.clearAllMocks();
     mocks.getOptionalPrivyUser.mockResolvedValue(null);
     mocks.getUserByPrivyId.mockResolvedValue(null);
+    mocks.checkRateLimit.mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
   });
 
   it('creates public chart checkouts without advertiser auth', async () => {
@@ -124,6 +130,26 @@ describe('/api/ads', () => {
 
     expect(response.status).toBe(400);
     expect(json.error).toContain('https://');
+    expect(mocks.createAdWithDirectPayment).not.toHaveBeenCalled();
+  });
+
+  it('blocks public ad checkout creation when the write rate limit is exceeded', async () => {
+    mocks.checkRateLimit.mockResolvedValue({ allowed: false, retryAfterSeconds: 1800 });
+
+    const response = await POST(
+      jsonRequest({
+        streamId: 'stream-1',
+        adType: 'chart',
+        tokenAddress: 'So11111111111111111111111111111111111111112',
+        chain: 'solana',
+      }),
+    );
+    const json = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(json.error).toContain('Too many ad checkouts');
+    expect(json.details).toEqual({ retryAfterSeconds: 1800 });
+    expect(mocks.getPairsByTokenAddress).not.toHaveBeenCalled();
     expect(mocks.createAdWithDirectPayment).not.toHaveBeenCalled();
   });
 

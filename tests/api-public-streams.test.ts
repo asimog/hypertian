@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   listOwnerPendingBannerAds: vi.fn(),
   listStreamsByOwnerSession: vi.fn(),
   setOwnerSessionCookie: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock('@/lib/env', () => ({
@@ -23,6 +24,10 @@ vi.mock('@/lib/owner-session', () => ({
   generateOwnerSession: mocks.generateOwnerSession,
   getOwnerSessionFromCookie: mocks.getOwnerSessionFromCookie,
   setOwnerSessionCookie: mocks.setOwnerSessionCookie,
+}));
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: mocks.checkRateLimit,
 }));
 
 vi.mock('@/lib/supabase/anon-queries', () => ({
@@ -52,6 +57,7 @@ describe('/api/public/streams', () => {
     mocks.getSiteUrl.mockReturnValue('https://hypertian.com');
     mocks.listOwnerPendingBannerAds.mockResolvedValue([]);
     mocks.listStreamsByOwnerSession.mockResolvedValue([]);
+    mocks.checkRateLimit.mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
     mocks.createAnonymousStream.mockImplementation(async (input) => ({
       id: 'stream-1',
       ...input,
@@ -124,6 +130,27 @@ describe('/api/public/streams', () => {
     expect(response.status).toBe(400);
     expect(json.error).toContain('Pump token mint is required');
     expect(mocks.createAnonymousStream).not.toHaveBeenCalled();
+  });
+
+  it('blocks stream creation when the public write rate limit is exceeded', async () => {
+    mocks.checkRateLimit.mockResolvedValue({ allowed: false, retryAfterSeconds: 3600 });
+
+    const response = await POST(
+      jsonRequest({
+        platform: 'x',
+        displayName: 'HyperTianX',
+        profileUrl: 'https://x.com/HyperMythX',
+        streamUrl: 'https://x.com/HyperMythX/status/1',
+        payoutWallet: WALLET,
+      }),
+    );
+    const json = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(json.error).toContain('Too many stream profiles');
+    expect(json.details).toEqual({ retryAfterSeconds: 3600 });
+    expect(mocks.createAnonymousStream).not.toHaveBeenCalled();
+    expect(mocks.setOwnerSessionCookie).not.toHaveBeenCalled();
   });
 
   it('uses the Pump mint as both pumpMint and defaultChartTokenAddress', async () => {
