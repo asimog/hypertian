@@ -182,17 +182,17 @@ export function MusicExperience() {
     <div className="music-page grid gap-6">
       <section className="music-stage panel overflow-hidden rounded-3xl">
         <canvas ref={canvasRef} aria-label="Audio reactive Earth particle visualizer" className="music-canvas" />
-        <div className="music-stage-copy">
-          <div className="text-[11px] uppercase tracking-[0.32em] text-[var(--color-accent)]">Music</div>
-          <h1 className="mt-1 max-w-xl text-3xl font-semibold text-white md:text-5xl">Reactive audio sphere</h1>
-          <p className="mt-2 max-w-xl text-sm text-[var(--color-copy-soft)]">
-            Play the local playlist, drop in MP3s, or stream YouTube audio while the Earth-like orb reacts live.
-          </p>
-        </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="panel rounded-3xl p-5">
+          <div className="mb-5">
+            <div className="text-[11px] uppercase tracking-[0.32em] text-[var(--color-accent)]">Music</div>
+            <h1 className="mt-1 max-w-xl text-3xl font-semibold text-white md:text-5xl">Reactive audio sphere</h1>
+            <p className="mt-2 max-w-xl text-sm text-[var(--color-copy-soft)]">
+              Play the local playlist, drop in MP3s, or stream YouTube audio while the Earth-like orb reacts live.
+            </p>
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">Now playing</div>

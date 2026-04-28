@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "VT323";
+  src: url("/fonts/VT323.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #061015;
   --foreground: #f5fbfb;
@@ -21,8 +29,8 @@
     radial-gradient(circle at 50% 120%, rgba(35, 88, 99, 0.34), transparent 40%),
     linear-gradient(180deg, #071216 0%, #03080b 100%);
   --gradient-accent: linear-gradient(135deg, #7ce4d2 0%, #86b6ff 48%, #b4d2ce 100%);
-  --font-sans: "Space Grotesk", "Inter", "Segoe UI", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-sans: "VT323", "Space Grotesk", "Inter", "Segoe UI", Arial, sans-serif;
+  --font-mono: "VT323", "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
   --color-ink: #061015;
   --color-copy: #d7e6e4;
@@ -471,19 +479,6 @@ textarea:focus-visible {
   height: clamp(24rem, 64vh, 44rem);
 }
 
-.music-stage-copy {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 1.25rem;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(3, 8, 10, 0.58), transparent 35%),
-    linear-gradient(0deg, rgba(3, 8, 10, 0.62), transparent 42%);
-}
-
 .music-dropzone {
   display: flex;
   min-height: 7.5rem;
@@ -502,12 +497,6 @@ textarea:focus-visible {
 .music-dropzone.is-active {
   border-color: rgba(134, 182, 255, 0.76);
   background: rgba(134, 182, 255, 0.11);
-}
-
-@media (min-width: 768px) {
-  .music-stage-copy {
-    padding: 2rem;
-  }
 }
 
 @media (min-width: 1024px) {
