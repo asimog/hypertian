@@ -397,6 +397,10 @@ export function SiteBackground() {
     return null;
   }
 
+  if (animationsPaused) {
+    return null;
+  }
+
   return (
     <>
       <div aria-hidden="true" className="site-background-shell">
