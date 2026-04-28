@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useMusic, type AudioFeatures } from '@/components/music-provider';
 import { createEarthRenderer, type EarthRenderer } from '@/components/earth-renderer';
@@ -21,6 +21,8 @@ const DISABLED_ROUTES = new Set([
   '/x-overlay',
   '/pump-overlay',
 ]);
+const ANIMATION_STORAGE_KEY = 'hypertian-animations-paused';
+const ANIMATION_EVENT = 'hypertian-animation-toggle';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -31,13 +33,26 @@ export function SiteBackground() {
   const music = useMusic();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const featuresRef = useRef<AudioFeatures>(music.features);
+  const [animationsPaused, setAnimationsPaused] = useState(false);
+
+  useEffect(() => {
+    setAnimationsPaused(window.localStorage.getItem(ANIMATION_STORAGE_KEY) === 'true');
+
+    function onAnimationToggle(event: Event) {
+      const detail = (event as CustomEvent<{ paused?: boolean }>).detail;
+      setAnimationsPaused(Boolean(detail?.paused));
+    }
+
+    window.addEventListener(ANIMATION_EVENT, onAnimationToggle);
+    return () => window.removeEventListener(ANIMATION_EVENT, onAnimationToggle);
+  }, []);
 
   useEffect(() => {
     featuresRef.current = music.features;
   }, [music.features]);
 
   useEffect(() => {
-    if (DISABLED_ROUTES.has(pathname) || pathname?.startsWith('/overlay')) {
+    if (animationsPaused || DISABLED_ROUTES.has(pathname) || pathname?.startsWith('/overlay')) {
       return;
     }
 
@@ -376,7 +391,7 @@ export function SiteBackground() {
       window.removeEventListener('mousemove', onPointerMove);
       window.cancelAnimationFrame(animationFrame);
     };
-  }, [pathname]);
+  }, [animationsPaused, pathname]);
 
   if (DISABLED_ROUTES.has(pathname) || pathname?.startsWith('/overlay')) {
     return null;

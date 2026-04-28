@@ -1,9 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
-import { Activity, Music2, Pause, Play, RadioTower, TvMinimalPlay, Wallet } from 'lucide-react';
+import { Activity, Music2, Pause, Play, RadioTower, Sparkles, TvMinimalPlay, Wallet } from 'lucide-react';
 import { isPrivyEnabled } from '@/lib/env';
 import { useMusic } from '@/components/music-provider';
 
@@ -65,8 +66,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className={isHome ? undefined : 'mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 pb-16 sm:px-5'} id="main-content">
         {children}
       </main>
-      <footer className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 pb-8 sm:px-5 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-copy-faint)]">
+      <footer className="mx-auto grid w-full max-w-6xl gap-3 px-4 pb-8 sm:px-5 md:grid-cols-[1fr_auto_1fr] md:items-center">
+        <div className="flex justify-center md:justify-start">
+          <FooterMusicControls />
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2 text-base text-[var(--color-copy-faint)]">
           <span>Hypertian</span>
           <span aria-hidden>·</span>
           <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/feedback">
@@ -77,11 +81,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Admin
           </Link>
         </div>
-        <FooterMusicControls />
+        <div className="flex justify-center md:justify-end">
+          <AnimationToggle />
+        </div>
       </footer>
     </div>
   );
 }
+
+const ANIMATION_STORAGE_KEY = 'hypertian-animations-paused';
+const ANIMATION_EVENT = 'hypertian-animation-toggle';
 
 function FooterMusicControls() {
   const music = useMusic();
@@ -102,6 +111,32 @@ function FooterMusicControls() {
         {music.isPlaying ? <Pause aria-hidden className="h-4 w-4" /> : <Play aria-hidden className="h-4 w-4" />}
       </button>
     </div>
+  );
+}
+
+function AnimationToggle() {
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    setPaused(window.localStorage.getItem(ANIMATION_STORAGE_KEY) === 'true');
+  }, []);
+
+  function toggleAnimations() {
+    const next = !paused;
+    setPaused(next);
+    window.localStorage.setItem(ANIMATION_STORAGE_KEY, String(next));
+    window.dispatchEvent(new CustomEvent(ANIMATION_EVENT, { detail: { paused: next } }));
+  }
+
+  return (
+    <button
+      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-base text-[var(--color-copy-soft)] transition hover:border-white/20 hover:text-white"
+      onClick={toggleAnimations}
+      type="button"
+    >
+      <Sparkles aria-hidden className="h-4 w-4 text-[var(--color-accent)]" />
+      {paused ? 'Start animations' : 'Stop animations'}
+    </button>
   );
 }
 

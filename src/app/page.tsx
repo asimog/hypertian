@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Activity, Music2, RadioTower, TvMinimalPlay } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -17,7 +16,6 @@ export default function HomePage() {
         <div className="home-grid">
           {boxes.map((box) => (
             <Link className="home-box" href={box.href} key={box.href}>
-              <box.Icon aria-hidden className="home-box-icon" />
               <span className="home-box-eyebrow">{box.eyebrow}</span>
               <h2 className="home-box-title">{box.title}</h2>
               <p className="home-box-desc">{box.desc}</p>
@@ -35,27 +33,23 @@ const boxes = [
     eyebrow: 'Creator',
     title: 'Streamer',
     desc: 'Create an anonymous stream profile, copy your OBS overlay, and approve banner requests.',
-    Icon: RadioTower,
   },
   {
     href: '/directory',
     eyebrow: 'Live',
     title: 'Directory',
     desc: 'Browse fresh heartbeat streams and request chart or media placements.',
-    Icon: TvMinimalPlay,
   },
   {
     href: '/feed',
     eyebrow: 'Ledger',
     title: 'Feed',
     desc: 'Track every ad job and payment with public status cards and receipts.',
-    Icon: Activity,
   },
   {
     href: '/music',
     eyebrow: 'Audio',
     title: 'Music',
     desc: 'Play music across the site while the global orb and particles react to sound.',
-    Icon: Music2,
   },
 ] as const;

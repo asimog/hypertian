@@ -51,6 +51,9 @@ body {
   background: var(--gradient-bg);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
+  font-size: 20px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -374,11 +377,12 @@ textarea:focus-visible {
 .home-display-title {
   max-width: 13ch;
   color: #ffffff;
-  font-size: clamp(3.25rem, 12vw, 8.5rem);
-  font-weight: 800;
-  line-height: 0.84;
+  font-size: clamp(2.6rem, 9vw, 6rem);
+  font-weight: 700;
+  line-height: 0.94;
   letter-spacing: 0;
   text-wrap: balance;
+  text-shadow: 0 0 24px rgba(73, 197, 182, 0.35), 0 0 56px rgba(73, 197, 182, 0.2);
 }
 
 .home-blink-x {
@@ -436,27 +440,17 @@ textarea:focus-visible {
   border-color: rgba(124, 228, 210, 0.38);
 }
 
-.home-box-icon {
-  position: absolute;
-  right: 1rem;
-  top: 1rem;
-  height: 1.25rem;
-  width: 1.25rem;
-  color: var(--color-accent);
-  opacity: 0.78;
-}
-
 .home-box-eyebrow {
   color: var(--color-accent);
-  font-size: 0.68rem;
+  font-size: clamp(0.9rem, 1.6vw, 1.05rem);
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .home-box-title {
   color: #ffffff;
-  font-size: clamp(1.65rem, 4vw, 2.55rem);
+  font-size: clamp(2.1rem, 4.6vw, 3.15rem);
   font-weight: 760;
   line-height: 0.98;
 }
@@ -464,8 +458,8 @@ textarea:focus-visible {
 .home-box-desc {
   max-width: 25rem;
   color: var(--color-copy-soft);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: clamp(1.08rem, 2vw, 1.25rem);
+  line-height: 1.5;
 }
 
 .music-stage {
