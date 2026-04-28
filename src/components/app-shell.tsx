@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
-import { Activity, Music2, Pause, Play, RadioTower, Sparkles, TvMinimalPlay, Wallet } from 'lucide-react';
+import { Eye, EyeOff, Pause, Play, TvMinimalPlay } from 'lucide-react';
 import { isPrivyEnabled } from '@/lib/env';
 import { useMusic } from '@/components/music-provider';
 
@@ -66,10 +66,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className={isHome ? undefined : 'mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 pb-16 sm:px-5'} id="main-content">
         {children}
       </main>
+      <FooterMusicControls />
+      <AnimationToggle />
       <footer className="mx-auto grid w-full max-w-6xl gap-3 px-4 pb-8 sm:px-5 md:grid-cols-[1fr_auto_1fr] md:items-center">
-        <div className="flex justify-center md:justify-start">
-          <FooterMusicControls />
-        </div>
+        <div aria-hidden="true" />
         <div className="flex flex-wrap items-center justify-center gap-2 text-base text-[var(--color-copy-faint)]">
           <span>Hypertian</span>
           <span aria-hidden>·</span>
@@ -81,9 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Admin
           </Link>
         </div>
-        <div className="flex justify-center md:justify-end">
-          <AnimationToggle />
-        </div>
+        <div aria-hidden="true" />
       </footer>
     </div>
   );
@@ -97,20 +95,15 @@ function FooterMusicControls() {
   const title = music.sourceKind === 'youtube' ? 'YouTube audio' : music.selectedTrack?.label ?? 'Music ready';
 
   return (
-    <div className="flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-2 py-1 text-xs text-[var(--color-copy-soft)]">
-      <Link className="inline-flex items-center gap-1.5 px-2 text-white" href="/music">
-        <Music2 aria-hidden className="h-3.5 w-3.5 text-[var(--color-accent)]" />
-        <span className="max-w-[11rem] truncate">{title}</span>
-      </Link>
-      <button
-        aria-label={music.isPlaying ? 'Pause music' : 'Play music'}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white hover:border-white/20"
-        onClick={() => void music.toggle()}
-        type="button"
-      >
-        {music.isPlaying ? <Pause aria-hidden className="h-4 w-4" /> : <Play aria-hidden className="h-4 w-4" />}
-      </button>
-    </div>
+    <button
+      aria-label={music.isPlaying ? `Pause music: ${title}` : `Play music: ${title}`}
+      className={`global-play-pause-btn${music.isPlaying ? ' is-playing' : ''}`}
+      onClick={() => void music.toggle()}
+      title={music.isPlaying ? `Pause music: ${title}` : `Play music: ${title}`}
+      type="button"
+    >
+      {music.isPlaying ? <Pause aria-hidden /> : <Play aria-hidden />}
+    </button>
   );
 }
 
@@ -130,12 +123,13 @@ function AnimationToggle() {
 
   return (
     <button
-      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-base text-[var(--color-copy-soft)] transition hover:border-white/20 hover:text-white"
+      aria-label={paused ? 'Turn on animated background' : 'Turn off animated background'}
+      className={`background-toggle-btn${paused ? ' is-off' : ''}`}
       onClick={toggleAnimations}
+      title={paused ? 'Turn on animated background' : 'Turn off animated background'}
       type="button"
     >
-      <Sparkles aria-hidden className="h-4 w-4 text-[var(--color-accent)]" />
-      {paused ? 'Start animations' : 'Stop animations'}
+      {paused ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
     </button>
   );
 }

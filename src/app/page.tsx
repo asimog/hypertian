@@ -16,7 +16,6 @@ export default function HomePage() {
         <div className="home-grid">
           {boxes.map((box) => (
             <Link className="home-box" href={box.href} key={box.href}>
-              <span className="home-box-eyebrow">{box.eyebrow}</span>
               <h2 className="home-box-title">{box.title}</h2>
               <p className="home-box-desc">{box.desc}</p>
             </Link>
@@ -30,25 +29,21 @@ export default function HomePage() {
 const boxes = [
   {
     href: '/streamer',
-    eyebrow: 'Creator',
     title: 'Streamer',
     desc: 'Create an anonymous stream profile, copy your OBS overlay, and approve banner requests.',
   },
   {
     href: '/directory',
-    eyebrow: 'Live',
     title: 'Directory',
     desc: 'Browse fresh heartbeat streams and request chart or media placements.',
   },
   {
     href: '/feed',
-    eyebrow: 'Ledger',
     title: 'Feed',
     desc: 'Track every ad job and payment with public status cards and receipts.',
   },
   {
     href: '/music',
-    eyebrow: 'Audio',
     title: 'Music',
     desc: 'Play music across the site while the global orb and particles react to sound.',
   },
