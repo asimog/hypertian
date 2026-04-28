@@ -10,6 +10,13 @@ describe('filebase helpers', () => {
         fileSize: 1024,
       }),
     ).toMatch(/\.png$/);
+    expect(
+      assertValidFilebaseUpload({
+        fileName: 'banner.gif',
+        contentType: 'image/gif',
+        fileSize: 1024,
+      }),
+    ).toMatch(/\.gif$/);
   });
 
   it('rejects non-image and oversized uploads', () => {
@@ -25,9 +32,9 @@ describe('filebase helpers', () => {
       assertValidFilebaseUpload({
         fileName: 'banner.png',
         contentType: 'image/png',
-        fileSize: 6 * 1024 * 1024,
+        fileSize: 2 * 1024 * 1024,
       }),
-    ).toThrow('5MB or smaller');
+    ).toThrow('1MB or smaller');
   });
 
   it('builds public Filebase URLs with safe path encoding', () => {

@@ -29,6 +29,7 @@ export interface StreamRecord {
   price_sol: number | null;
   payout_wallet: string | null;
   default_banner_url: string | null;
+  default_chart_token_address: string | null;
   overlay_secret_hash: string | null;
   overlay_verified_at: string | null;
   verification_status: StreamVerificationStatus | null;

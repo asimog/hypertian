@@ -1,6 +1,6 @@
 import { fail, ok } from '@/lib/http';
 import { createOverlayHeartbeatKey } from '@/lib/overlay-auth';
-import { DEFAULT_AD_PRICE_SOL } from '@/lib/constants';
+import { DEFAULT_AD_PRICE_SOL, DEFAULT_CHART_TOKEN_ADDRESS } from '@/lib/constants';
 import { getSiteUrl } from '@/lib/env';
 import { assertHttpsUrl, sanitizeOptionalHttpsUrl, streamPlatformSchema } from '@/lib/platform';
 import { requirePrivyUser } from '@/lib/privy';
@@ -16,6 +16,7 @@ const schema = z.object({
   payoutWallet: z.string().min(32),
   priceSol: z.number().positive().max(100).default(DEFAULT_AD_PRICE_SOL),
   defaultBannerUrl: z.string().optional().nullable(),
+  defaultChartTokenAddress: z.string().optional().nullable(),
   pumpMint: z.string().optional().nullable(),
   pumpDeployerWallet: z.string().optional().nullable(),
 });
@@ -41,6 +42,12 @@ export async function POST(request: Request) {
     const profileUrl = assertHttpsUrl(body.profileUrl, 'Profile URL');
     const streamUrl = assertHttpsUrl(body.streamUrl, 'Stream URL');
     const defaultBannerUrl = sanitizeOptionalHttpsUrl(body.defaultBannerUrl, 'Default banner URL');
+    const pumpMint = body.pumpMint?.trim() || null;
+    if (body.platform === 'pump' && !pumpMint) {
+      return fail('Pump token mint is required so the default chart can use the streamer chart.', 400);
+    }
+    const defaultChartTokenAddress =
+      body.platform === 'pump' ? pumpMint : body.defaultChartTokenAddress?.trim() || DEFAULT_CHART_TOKEN_ADDRESS;
     let pumpDeployerWallet = body.platform === 'pump' ? body.pumpDeployerWallet || body.payoutWallet : body.pumpDeployerWallet;
     let pumpCreatorVerified = false;
     if (body.platform === 'pump' && body.pumpMint) {
@@ -66,7 +73,8 @@ export async function POST(request: Request) {
       payoutWallet: body.payoutWallet,
       priceSol: body.priceSol,
       defaultBannerUrl,
-      pumpMint: body.platform === 'pump' ? body.pumpMint ?? null : null,
+      defaultChartTokenAddress,
+      pumpMint: body.platform === 'pump' ? pumpMint : null,
       pumpDeployerWallet: body.platform === 'pump' ? pumpDeployerWallet ?? null : null,
       pumpCreatorVerified,
     });

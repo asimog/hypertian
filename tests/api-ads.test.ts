@@ -65,8 +65,6 @@ describe('/api/ads', () => {
         adType: 'chart',
         tokenAddress: 'So11111111111111111111111111111111111111112',
         chain: 'solana',
-        position: 'bottom-right',
-        size: 'medium',
       }),
     );
     const json = await response.json();
@@ -77,6 +75,8 @@ describe('/api/ads', () => {
       expect.objectContaining({
         adType: 'chart',
         dexPairAddress: 'pair-1',
+        position: 'bottom-right',
+        size: 'medium',
         streamId: 'stream-1',
       }),
     );
@@ -252,5 +252,26 @@ describe('/api/ads', () => {
         media_type: null,
       }),
     ]);
+  });
+
+  it('detects gif banner media for overlays', async () => {
+    mocks.getStreamById.mockResolvedValue({ id: 'stream-1', default_banner_url: null });
+    mocks.listActiveAdsForStream.mockResolvedValue([
+      {
+        id: 'ad-1',
+        ad_type: 'banner',
+        banner_url: 'https://example.com/ad.gif?cache=1',
+        status: 'active',
+      },
+    ]);
+
+    const response = await GET(new Request('http://localhost/api/ads?stream=stream-1'));
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.ads[0]).toMatchObject({
+      media_src: 'https://example.com/ad.gif?cache=1',
+      media_type: 'gif',
+    });
   });
 });

@@ -12,11 +12,25 @@ const schema = z.object({
   tokenAddress: z.string().optional().nullable(),
   chain: z.enum(['solana', 'ethereum', 'base', 'bsc', 'arbitrum', 'polygon']).default('solana'),
   bannerUrl: z.string().optional().nullable(),
-  position: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right', 'full']),
-  size: z.enum(['small', 'medium', 'large']),
+  position: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right', 'full']).default('bottom-right'),
+  size: z.enum(['small', 'medium', 'large']).default('medium'),
   advertiserContact: z.string().max(160).optional().nullable(),
   advertiserNote: z.string().max(500).optional().nullable(),
 });
+
+function getMediaType(src: string | null): OverlayActiveAd['media_type'] {
+  if (!src) {
+    return null;
+  }
+  const clean = src.split('?')[0]?.toLowerCase() ?? '';
+  if (clean.endsWith('.gif')) {
+    return 'gif';
+  }
+  if (clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.mov')) {
+    return 'video';
+  }
+  return 'image';
+}
 
 export async function GET(request: Request) {
   try {
@@ -30,7 +44,7 @@ export async function GET(request: Request) {
     const overlayAds: OverlayActiveAd[] = ads.map((ad: AdRecord) => ({
       ...ad,
       media_src: ad.ad_type === 'banner' ? ad.banner_url ?? null : null,
-      media_type: ad.ad_type === 'banner' ? 'image' : null,
+      media_type: ad.ad_type === 'banner' ? getMediaType(ad.banner_url ?? null) : null,
     }));
 
     return ok({ stream, ads: overlayAds });

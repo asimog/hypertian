@@ -66,8 +66,6 @@ function SponsorDashboardContent({
   const [chain, setChain] = useState<'solana' | 'base' | 'ethereum' | 'bsc' | 'arbitrum' | 'polygon'>('solana');
   const [bannerUrl, setBannerUrl] = useState('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [position, setPosition] = useState<'bottom-right' | 'top-left' | 'top-right' | 'bottom-left' | 'full'>('bottom-right');
-  const [size, setSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [advertiserContact, setAdvertiserContact] = useState('');
   const [txSignature, setTxSignature] = useState('');
   const [createdPayment, setCreatedPayment] = useState<PendingPayment | null>(null);
@@ -122,8 +120,6 @@ function SponsorDashboardContent({
           tokenAddress: adType === 'chart' ? tokenAddress : null,
           chain,
           bannerUrl: adType === 'banner' ? bannerUrl : null,
-          position,
-          size,
           advertiserContact: advertiserContact || null,
         }),
       });
@@ -288,7 +284,7 @@ function SponsorDashboardContent({
                     Upload banner asset
                     <input
                       id="banner-file"
-                      accept="image/png,image/jpeg,image/gif"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
                       className={fieldClassName}
                       onChange={(event) => setBannerFile(event.target.files?.[0] ?? null)}
                       type="file"
@@ -303,26 +299,6 @@ function SponsorDashboardContent({
                 </div>
               </div>
             )}
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 text-sm font-medium text-white" htmlFor="placement-position">
-                Placement
-                <select id="placement-position" className={fieldClassName} onChange={(event) => setPosition(event.target.value as typeof position)} value={position}>
-                  <option value="bottom-right">Bottom right</option>
-                  <option value="bottom-left">Bottom left</option>
-                  <option value="top-right">Top right</option>
-                  <option value="top-left">Top left</option>
-                  <option value="full">Full screen</option>
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-white" htmlFor="placement-size">
-                Size
-                <select id="placement-size" className={fieldClassName} onChange={(event) => setSize(event.target.value as typeof size)} value={size}>
-                  <option value="small">Small</option>
-                  <option value="medium">Medium</option>
-                  <option value="large">Large</option>
-                </select>
-              </label>
-            </div>
             <label className="grid gap-2 text-sm font-medium text-white" htmlFor="advertiser-contact">
               Campaign contact
               <input autoComplete="email" id="advertiser-contact" className={fieldClassName} onChange={(event) => setAdvertiserContact(event.target.value)} placeholder="email or @handle for campaign follow-up" value={advertiserContact} />
@@ -441,7 +417,7 @@ function SponsorDashboardContent({
                   <div>
                     <h3 className="text-base font-semibold text-white">{ad.ad_type === 'banner' ? 'Banner campaign' : 'Chart campaign'}</h3>
                     <p className="mt-1 text-sm text-[var(--color-copy-soft)]">
-                      {readableStatus(ad.status)} · {ad.chain} · {ad.position.replace('-', ' ')} · {ad.size}
+                      {readableStatus(ad.status)} · {ad.chain}
                     </p>
                   </div>
                   <div className="pill">{ad.id.slice(0, 8)}</div>

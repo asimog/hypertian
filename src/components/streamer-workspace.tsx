@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, LoaderCircle, RadioTower } from 'lucide-react';
 import { CopyButton } from '@/components/copy-button';
-import { DEFAULT_AD_PRICE_SOL, STREAM_PLATFORM_NAMES } from '@/lib/constants';
+import { DEFAULT_AD_PRICE_SOL, DEFAULT_CHART_TOKEN_ADDRESS, DEFAULT_STREAM_BANNER_URL, STREAM_PLATFORM_NAMES } from '@/lib/constants';
 import { AdRecord, StreamPlatform, StreamRecord } from '@/lib/types';
 
 type StreamerStream = StreamRecord & { overlayUrl?: string };
@@ -20,6 +20,25 @@ type HeartbeatState = {
 };
 
 const HEARTBEAT_POLL_MS = 4_000;
+const MAX_BANNER_BYTES = 1024 * 1024;
+
+function resolveIdentity(input: string, platform: StreamPlatform, streamUrl: string) {
+  const value = input.trim();
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    const url = new URL(value);
+    const handle = url.pathname.split('/').filter(Boolean)[0] || url.hostname;
+    return {
+      displayName: handle.replace(/^@/, '') || STREAM_PLATFORM_NAMES[platform],
+      profileUrl: value,
+    };
+  }
+
+  const handle = value.replace(/^@/, '');
+  return {
+    displayName: handle || STREAM_PLATFORM_NAMES[platform],
+    profileUrl: platform === 'x' && handle ? `https://x.com/${handle}` : streamUrl,
+  };
+}
 
 export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) {
   const [streams, setStreams] = useState<StreamerStream[]>(initialStreams);
@@ -27,14 +46,15 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
   const [heartbeatStates, setHeartbeatStates] = useState<Record<string, HeartbeatState>>({});
 
   const [platform, setPlatform] = useState<StreamPlatform>('x');
-  const [displayName, setDisplayName] = useState('');
-  const [profileUrl, setProfileUrl] = useState('');
+  const [identity, setIdentity] = useState('');
   const [streamUrl, setStreamUrl] = useState('');
   const [payoutWallet, setPayoutWallet] = useState('');
   const [pumpMint, setPumpMint] = useState('');
   const [pumpDeployerWallet, setPumpDeployerWallet] = useState('');
   const [priceSol, setPriceSol] = useState(String(DEFAULT_AD_PRICE_SOL));
   const [defaultBannerUrl, setDefaultBannerUrl] = useState('');
+  const [defaultChartTokenAddress, setDefaultChartTokenAddress] = useState('');
+  const [defaultBannerFile, setDefaultBannerFile] = useState<File | null>(null);
 
   const [bannerEdits, setBannerEdits] = useState<Record<string, string>>({});
   const [bannerSavingId, setBannerSavingId] = useState<string | null>(null);
@@ -109,17 +129,20 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
     setCreating(true);
     setErrorMessage(null);
     try {
+      const identityValues = resolveIdentity(identity, platform, streamUrl);
+      const uploadedBannerUrl = defaultBannerFile ? await uploadBannerAsset(defaultBannerFile) : null;
       const res = await fetch('/api/public/streams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           platform,
-          displayName,
-          profileUrl,
+          displayName: identityValues.displayName,
+          profileUrl: identityValues.profileUrl,
           streamUrl,
           payoutWallet: platform === 'x' ? payoutWallet : null,
           priceSol: Number(priceSol || DEFAULT_AD_PRICE_SOL),
-          defaultBannerUrl: defaultBannerUrl || null,
+          defaultBannerUrl: uploadedBannerUrl || defaultBannerUrl || null,
+          defaultChartTokenAddress: platform === 'pump' ? pumpMint || null : defaultChartTokenAddress || null,
           pumpMint: platform === 'pump' ? pumpMint || null : null,
           pumpDeployerWallet: platform === 'pump' ? pumpDeployerWallet : null,
         }),
@@ -130,18 +153,50 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
       }
       const next: StreamerStream = { ...data.stream, overlayUrl: data.overlayUrl };
       setStreams((current) => [next, ...current]);
-      setDisplayName('');
-      setProfileUrl('');
+      setIdentity('');
       setStreamUrl('');
       setPayoutWallet('');
       setPumpMint('');
       setPumpDeployerWallet('');
       setDefaultBannerUrl('');
+      setDefaultChartTokenAddress('');
+      setDefaultBannerFile(null);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to create profile.');
     } finally {
       setCreating(false);
     }
+  }
+
+  async function uploadBannerAsset(file: File) {
+    if (file.size > MAX_BANNER_BYTES) {
+      throw new Error('Banner upload must be 1MB or smaller.');
+    }
+
+    const presign = await fetch('/api/filebase/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+        fileSize: file.size,
+      }),
+    });
+    const upload = (await presign.json()) as { uploadUrl?: string; publicUrl?: string; error?: string };
+    if (!presign.ok || !upload.uploadUrl || !upload.publicUrl) {
+      throw new Error(upload.error || 'Failed to prepare upload.');
+    }
+
+    const put = await fetch(upload.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    });
+    if (!put.ok) {
+      throw new Error('Upload failed.');
+    }
+
+    return upload.publicUrl;
   }
 
   async function saveBanner(streamId: string) {
@@ -171,39 +226,18 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
     setBannerSavingId(streamId);
     setErrorMessage(null);
     try {
-      const presign = await fetch('/api/filebase/upload-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileName: file.name,
-          contentType: file.type || 'application/octet-stream',
-          fileSize: file.size,
-        }),
-      });
-      const upload = (await presign.json()) as { uploadUrl?: string; publicUrl?: string; error?: string };
-      if (!presign.ok || !upload.uploadUrl || !upload.publicUrl) {
-        throw new Error(upload.error || 'Failed to prepare upload.');
-      }
-
-      const put = await fetch(upload.uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type || 'application/octet-stream' },
-        body: file,
-      });
-      if (!put.ok) {
-        throw new Error('Upload failed.');
-      }
+      const publicUrl = await uploadBannerAsset(file);
 
       const res = await fetch('/api/public/streams/banner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ streamId, bannerUrl: upload.publicUrl }),
+        body: JSON.stringify({ streamId, bannerUrl: publicUrl }),
       });
       const data = (await res.json()) as { stream?: StreamRecord; error?: string };
       if (!res.ok || !data.stream) {
         throw new Error(data.error || 'Failed to save uploaded banner.');
       }
-      setBannerEdits((prev) => ({ ...prev, [streamId]: upload.publicUrl! }));
+      setBannerEdits((prev) => ({ ...prev, [streamId]: publicUrl }));
       setStreams((current) => current.map((s) => (s.id === streamId ? { ...s, default_banner_url: data.stream!.default_banner_url } : s)));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to upload banner.');
@@ -236,7 +270,8 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
 
   const liveCount = Object.values(heartbeatStates).filter((s) => s.isLive).length;
   const walletReady = platform === 'pump' ? pumpDeployerWallet : payoutWallet;
-  const canCreate = displayName && profileUrl && streamUrl && walletReady && !creating;
+  const chartReady = platform === 'pump' ? pumpMint : true;
+  const canCreate = identity && streamUrl && walletReady && chartReady && !creating;
 
   return (
     <div className="grid gap-6">
@@ -263,16 +298,19 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
             </select>
           </label>
           <label className="grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
-            Display name
-            <input className="field" onChange={(e) => setDisplayName(e.target.value)} placeholder="HyperMythX" value={displayName} />
-          </label>
-          <label className="grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
-            Profile URL (https)
-            <input className="field" onChange={(e) => setProfileUrl(e.target.value)} placeholder="https://x.com/handle" value={profileUrl} />
+            X username or profile link
+            <input
+              autoComplete="off"
+              className="field"
+              onChange={(e) => setIdentity(e.target.value)}
+              placeholder="@HyperMythX or https://x.com/HyperMythX"
+              spellCheck={false}
+              value={identity}
+            />
           </label>
           <label className="grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
             Stream URL (https)
-            <input className="field" onChange={(e) => setStreamUrl(e.target.value)} placeholder="https://x.com/handle/status/..." value={streamUrl} />
+            <input className="field" inputMode="url" onChange={(e) => setStreamUrl(e.target.value)} placeholder="https://x.com/handle/status/..." type="url" value={streamUrl} />
           </label>
           <label className="grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
             {platform === 'pump' ? 'X payout wallet (unused for Pump)' : 'Payout wallet (Solana)'}
@@ -287,16 +325,39 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
           </label>
           <label className="grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
             Base price (SOL)
-            <input className="field" inputMode="decimal" min="0" onChange={(e) => setPriceSol(e.target.value)} step="0.001" type="number" value={priceSol} />
+            <input className="field" inputMode="decimal" min="0" onChange={(e) => setPriceSol(e.target.value)} step="0.001" type="text" value={priceSol} />
           </label>
           <label className="md:col-span-2 grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
             Default banner URL (optional, https)
-            <input className="field" onChange={(e) => setDefaultBannerUrl(e.target.value)} placeholder="https://..." value={defaultBannerUrl} />
+            <input className="field" inputMode="url" onChange={(e) => setDefaultBannerUrl(e.target.value)} placeholder="https://..." type="url" value={defaultBannerUrl} />
+          </label>
+          {platform === 'x' ? (
+            <label className="md:col-span-2 grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
+              Default chart CA
+              <input
+                autoCapitalize="off"
+                autoCorrect="off"
+                className="field"
+                onChange={(e) => setDefaultChartTokenAddress(e.target.value)}
+                placeholder={DEFAULT_CHART_TOKEN_ADDRESS}
+                spellCheck={false}
+                value={defaultChartTokenAddress}
+              />
+            </label>
+          ) : null}
+          <label className="md:col-span-2 grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
+            Upload default banner (optional, max 1 MB)
+            <input
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              className="field"
+              onChange={(event) => setDefaultBannerFile(event.target.files?.[0] ?? null)}
+              type="file"
+            />
           </label>
           {platform === 'pump' ? (
             <>
               <label className="grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
-                Pump token mint (optional)
+                Pump token mint / default chart CA
                 <input className="field" onChange={(e) => setPumpMint(e.target.value)} placeholder="Mint address" spellCheck={false} value={pumpMint} />
               </label>
               <label className="grid gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-copy-faint)]">
@@ -316,7 +377,9 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
           <button className="primary-button" disabled={!canCreate} onClick={() => void createProfile()} type="button">
             {creating ? 'Creating…' : 'Create profile'}
           </button>
-          <span className="text-xs text-[var(--color-copy-faint)]">Free — 0% commission while we&rsquo;re in beta.</span>
+          <span className="text-xs text-[var(--color-copy-faint)]">
+            {defaultBannerFile ? `${defaultBannerFile.name} selected · ` : ''}Default GIF: {DEFAULT_STREAM_BANNER_URL} · 0% commission.
+          </span>
         </div>
         {errorMessage ? <div className="status-note mt-3" data-tone="danger">{errorMessage}</div> : null}
       </section>
@@ -341,6 +404,7 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
           const live = hb?.isLive ?? false;
           const everReceived = hb?.everReceived ?? false;
           const bannerValue = bannerEdits[stream.id] ?? stream.default_banner_url ?? '';
+          const chartValue = stream.platform === 'pump' ? stream.pump_mint : stream.default_chart_token_address || DEFAULT_CHART_TOKEN_ADDRESS;
 
           return (
             <article className="panel rounded-3xl p-5" key={stream.id}>
@@ -348,7 +412,7 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
                 <div>
                   <div className="text-base font-semibold text-white">{stream.display_name || STREAM_PLATFORM_NAMES[stream.platform]}</div>
                   <div className="text-xs text-[var(--color-copy-soft)]">
-                    {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL
+                    {STREAM_PLATFORM_NAMES[stream.platform]} · {stream.price_sol ?? DEFAULT_AD_PRICE_SOL} SOL · chart {chartValue ? `${chartValue.slice(0, 6)}...${chartValue.slice(-4)}` : 'unset'}
                   </div>
                 </div>
                 <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${
@@ -383,7 +447,7 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
                       aria-label="Default banner URL"
                       className="field"
                       onChange={(e) => setBannerEdits((prev) => ({ ...prev, [stream.id]: e.target.value }))}
-                      placeholder="https://… (image, gif, or mp4)"
+                      placeholder="https://…"
                       value={bannerValue}
                     />
                     <button
@@ -396,9 +460,9 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
                     </button>
                   </div>
                   <label className="secondary-button mt-2 w-full cursor-pointer justify-center sm:w-auto">
-                    Upload banner
+                    Upload banner · 1 MB max
                     <input
-                      accept="image/*,video/mp4,video/webm,.gif"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
                       className="sr-only"
                       onChange={(event) => {
                         const file = event.target.files?.[0] ?? null;
@@ -411,7 +475,7 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
                   {stream.default_banner_url ? (
                     <p className="mt-2 text-xs text-[var(--color-copy-soft)]">Currently shown when no paid ad is active.</p>
                   ) : (
-                    <p className="mt-2 text-xs text-[var(--color-copy-faint)]">Not set — overlay stays empty between paid ads.</p>
+                    <p className="mt-2 text-xs text-[var(--color-copy-faint)]">Not set — overlay uses the default GIF between paid ads.</p>
                   )}
                 </div>
               </div>
@@ -435,7 +499,7 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
                 <div>
                   <div className="text-sm font-medium text-white">Pending banner</div>
                   <div className="mt-0.5 text-xs text-[var(--color-copy-soft)]">
-                    {ad.duration_minutes ?? 5} min · {ad.size} · {ad.position}
+                    {ad.duration_minutes ?? 5} min · {ad.size}
                   </div>
                   {ad.banner_url ? (
                     <a className="mt-2 inline-block text-xs text-[var(--color-accent)] underline" href={ad.banner_url} rel="noreferrer" target="_blank">

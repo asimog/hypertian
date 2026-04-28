@@ -4,6 +4,9 @@ export const DEFAULT_AD_PRICE_SOL = 0.001;
 export const DEFAULT_AD_PRICE_USDC = 25;
 export const DEFAULT_AD_DURATION_HOURS = 4;
 export const DEFAULT_AD_DURATION_MINUTES = 5;
+export const DEFAULT_CHART_TOKEN_ADDRESS = 'So11111111111111111111111111111111111111112';
+export const DEFAULT_STREAM_BANNER_URL = '/docs/default-banner.gif';
+export const FALLBACK_STREAM_BANNER_URL = '/social-futures.gif';
 // Commission is wired through but disabled — platform takes 0% for now.
 // Flip COMMISSION_ENABLED back to true (and restore the BPS) to charge again.
 export const COMMISSION_ENABLED = false;

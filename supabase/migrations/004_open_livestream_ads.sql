@@ -5,6 +5,7 @@ alter table if exists streams
   add column if not exists price_sol numeric(20, 9) default 0.001,
   add column if not exists payout_wallet text,
   add column if not exists default_banner_url text,
+  add column if not exists default_chart_token_address text,
   add column if not exists overlay_secret_hash text,
   add column if not exists overlay_verified_at timestamptz,
   add column if not exists verification_status text default 'unverified',

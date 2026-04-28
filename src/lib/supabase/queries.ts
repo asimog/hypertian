@@ -1,7 +1,7 @@
 import 'server-only';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getBannerReviewState, getPaidAdActivationState } from '@/lib/ad-state';
-import { DEFAULT_AD_DURATION_MINUTES, DEFAULT_AD_PRICE_SOL, STREAM_PLATFORM_PRIORITY } from '@/lib/constants';
+import { DEFAULT_AD_DURATION_MINUTES, DEFAULT_AD_PRICE_SOL, DEFAULT_CHART_TOKEN_ADDRESS, STREAM_PLATFORM_PRIORITY } from '@/lib/constants';
 import { getServerEnv, isSupabaseAdminEnabled } from '@/lib/env';
 import { assertSolanaWallet } from '@/lib/platform';
 import { getPaymentRoute } from '@/lib/payment-routing';
@@ -76,6 +76,7 @@ export async function createStream(input: {
   priceSol?: number;
   payoutWallet: string;
   defaultBannerUrl?: string | null;
+  defaultChartTokenAddress?: string | null;
   pumpMint?: string | null;
   pumpDeployerWallet?: string | null;
   pumpCreatorVerified?: boolean;
@@ -92,6 +93,7 @@ export async function createStream(input: {
       price_sol: input.priceSol ?? DEFAULT_AD_PRICE_SOL,
       payout_wallet: input.platform === 'pump' ? input.pumpDeployerWallet ?? input.payoutWallet : input.payoutWallet,
       default_banner_url: input.defaultBannerUrl ?? null,
+      default_chart_token_address: input.platform === 'pump' ? input.pumpMint : input.defaultChartTokenAddress ?? DEFAULT_CHART_TOKEN_ADDRESS,
       verification_status: input.platform === 'pump' && input.pumpCreatorVerified ? 'verified' : 'unverified',
       pump_mint: input.pumpMint ?? null,
       pump_deployer_wallet: input.pumpDeployerWallet ?? null,
@@ -114,6 +116,7 @@ export async function updateStream(input: {
   priceSol: number;
   payoutWallet: string;
   defaultBannerUrl?: string | null;
+  defaultChartTokenAddress?: string | null;
 }) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -125,6 +128,7 @@ export async function updateStream(input: {
       price_sol: input.priceSol,
       payout_wallet: input.payoutWallet,
       default_banner_url: input.defaultBannerUrl ?? null,
+      default_chart_token_address: input.defaultChartTokenAddress ?? DEFAULT_CHART_TOKEN_ADDRESS,
     })
     .eq('id', input.streamId)
     .eq('user_id', input.userId)
@@ -601,18 +605,13 @@ export async function getPayment(paymentId: string) {
 export async function verifyPayment(input: { paymentId: string; txHash: string }) {
   const supabase = createAdminClient();
   const now = new Date();
-  const { data: payment, error: paymentError } = await supabase
+  const { data: payment, error: fetchPaymentError } = await supabase
     .from('payments')
-    .update({
-      tx_hash: input.txHash,
-      status: 'verified',
-      verified_at: now.toISOString(),
-    })
+    .select('*')
     .eq('id', input.paymentId)
-    .select()
     .single<PaymentRecord>();
-  if (paymentError) {
-    throw paymentError;
+  if (fetchPaymentError) {
+    throw fetchPaymentError;
   }
 
   const { data: ad, error: fetchAdError } = await supabase
@@ -645,7 +644,21 @@ export async function verifyPayment(input: { paymentId: string; txHash: string }
     throw adError;
   }
 
-  return payment;
+  const { data: verifiedPayment, error: paymentError } = await supabase
+    .from('payments')
+    .update({
+      tx_hash: input.txHash,
+      status: 'verified',
+      verified_at: now.toISOString(),
+    })
+    .eq('id', input.paymentId)
+    .select()
+    .single<PaymentRecord>();
+  if (paymentError) {
+    throw paymentError;
+  }
+
+  return verifiedPayment;
 }
 
 export async function listPendingPayments(limit = 25) {

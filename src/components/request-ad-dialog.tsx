@@ -24,12 +24,10 @@ type CreateResponse = {
 };
 
 export function RequestAdDialog({ stream, kind, onClose }: Props) {
-  const [tokenAddress, setTokenAddress] = useState('');
+  const [tokenAddress, setTokenAddress] = useState(stream.default_chart_token_address || stream.pump_mint || '');
   const [bannerUrl, setBannerUrl] = useState('');
   const [contact, setContact] = useState('');
   const [note, setNote] = useState('');
-  const [position, setPosition] = useState('bottom-right');
-  const [size, setSize] = useState('medium');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CreateResponse | null>(null);
@@ -59,8 +57,6 @@ export function RequestAdDialog({ stream, kind, onClose }: Props) {
           tokenAddress: kind === 'chart' ? tokenAddress : null,
           chain: 'solana',
           bannerUrl: kind === 'banner' ? bannerUrl : null,
-          position,
-          size,
           advertiserContact: contact || null,
           advertiserNote: note || null,
         }),
@@ -105,26 +101,6 @@ export function RequestAdDialog({ stream, kind, onClose }: Props) {
                   <input className="field" onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://..." value={bannerUrl} />
                 </label>
               )}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1.5 text-[11px] uppercase tracking-[0.2em] text-[var(--color-copy-faint)]">
-                  Position
-                  <select className="field" onChange={(e) => setPosition(e.target.value)} value={position}>
-                    <option value="bottom-right">bottom-right</option>
-                    <option value="bottom-left">bottom-left</option>
-                    <option value="top-right">top-right</option>
-                    <option value="top-left">top-left</option>
-                    <option value="full">full</option>
-                  </select>
-                </label>
-                <label className="grid gap-1.5 text-[11px] uppercase tracking-[0.2em] text-[var(--color-copy-faint)]">
-                  Size
-                  <select className="field" onChange={(e) => setSize(e.target.value)} value={size}>
-                    <option value="small">small</option>
-                    <option value="medium">medium</option>
-                    <option value="large">large</option>
-                  </select>
-                </label>
-              </div>
               <label className="grid gap-1.5 text-[11px] uppercase tracking-[0.2em] text-[var(--color-copy-faint)]">
                 Contact (optional)
                 <input className="field" onChange={(e) => setContact(e.target.value)} placeholder="@handle, email, or telegram" value={contact} />

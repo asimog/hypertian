@@ -1,4 +1,4 @@
-export const FILEBASE_MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const FILEBASE_MAX_UPLOAD_BYTES = 1024 * 1024;
 export const FILEBASE_ALLOWED_CONTENT_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
 
 export function assertValidFilebaseUpload(input: {
@@ -10,7 +10,7 @@ export function assertValidFilebaseUpload(input: {
     throw new Error('Banner upload must be PNG, JPEG, GIF, or WebP.');
   }
   if (!Number.isInteger(input.fileSize) || input.fileSize <= 0 || input.fileSize > FILEBASE_MAX_UPLOAD_BYTES) {
-    throw new Error('Banner upload must be 5MB or smaller.');
+    throw new Error('Banner upload must be 1MB or smaller.');
   }
 
   return sanitizeFilebaseFileName(input.fileName);

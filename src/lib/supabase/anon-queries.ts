@@ -1,5 +1,5 @@
 import 'server-only';
-import { DEFAULT_AD_PRICE_SOL, STREAM_HEARTBEAT_STALE_MS } from '@/lib/constants';
+import { DEFAULT_AD_PRICE_SOL, DEFAULT_CHART_TOKEN_ADDRESS, STREAM_HEARTBEAT_STALE_MS } from '@/lib/constants';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AdRecord, PaymentRecord, StreamPlatform, StreamRecord } from '@/lib/types';
 
@@ -25,6 +25,7 @@ export interface AnonStreamInput {
   payoutWallet: string;
   priceSol?: number | null;
   defaultBannerUrl?: string | null;
+  defaultChartTokenAddress?: string | null;
   pumpMint?: string | null;
   pumpDeployerWallet?: string | null;
 }
@@ -44,6 +45,7 @@ export async function createAnonymousStream(input: AnonStreamInput) {
       price_sol: input.priceSol ?? DEFAULT_AD_PRICE_SOL,
       payout_wallet: payoutWallet,
       default_banner_url: input.defaultBannerUrl ?? null,
+      default_chart_token_address: input.platform === 'pump' ? input.pumpMint : input.defaultChartTokenAddress ?? DEFAULT_CHART_TOKEN_ADDRESS,
       verification_status: 'unverified',
       pump_mint: input.platform === 'pump' ? input.pumpMint ?? null : null,
       pump_deployer_wallet: input.platform === 'pump' ? payoutWallet : null,
@@ -120,6 +122,8 @@ export interface DirectoryStream {
   stream_url: string | null;
   price_sol: number | null;
   default_banner_url: string | null;
+  default_chart_token_address: string | null;
+  pump_mint: string | null;
   is_live: boolean;
   last_heartbeat: string | null;
   created_at: string;
@@ -130,7 +134,7 @@ export async function listLiveDirectoryStreams() {
   const cutoff = new Date(Date.now() - DIRECTORY_LIVE_WINDOW_MS).toISOString();
   const { data, error } = await supabase
     .from('streams')
-    .select('id, display_name, platform, profile_url, stream_url, price_sol, default_banner_url, is_live, last_heartbeat, created_at')
+    .select('id, display_name, platform, profile_url, stream_url, price_sol, default_banner_url, default_chart_token_address, pump_mint, is_live, last_heartbeat, created_at')
     .eq('is_hidden', false)
     .gte('last_heartbeat', cutoff)
     .order('last_heartbeat', { ascending: false })

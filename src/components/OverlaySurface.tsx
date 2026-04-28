@@ -5,7 +5,7 @@ import DexChart from '@/components/DexChart';
 import MediaBanner from '@/components/MediaBanner';
 import OverlayDisclosure from '@/components/OverlayDisclosure';
 import { useDexScreener } from '@/hooks/useDexScreener';
-import { STREAM_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
+import { DEFAULT_CHART_TOKEN_ADDRESS, DEFAULT_STREAM_BANNER_URL, STREAM_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
 import { OverlayActiveAd, StreamRecord } from '@/lib/types';
 
 type Platform = 'x' | 'pump';
@@ -34,6 +34,20 @@ function getPositionClass(position: string) {
   }
 }
 
+function inferMediaType(src: string | null): OverlayActiveAd['media_type'] {
+  if (!src) {
+    return null;
+  }
+  const clean = src.split('?')[0]?.toLowerCase() ?? '';
+  if (clean.endsWith('.gif')) {
+    return 'gif';
+  }
+  if (clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.mov')) {
+    return 'video';
+  }
+  return 'image';
+}
+
 export default function OverlaySurface({ platform, searchParams }: OverlaySurfaceProps) {
   const streamId = searchParams.get('stream');
   const heartbeatKey = searchParams.get('key');
@@ -41,15 +55,19 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
   const [stream, setStream] = useState<StreamRecord | null>(null);
   const activeAd = activeAds[0] ?? null;
   const isBannerAd = activeAd?.ad_type === 'banner';
-  const token = !isBannerAd ? activeAd?.token_address || searchParams.get('token') || '' : '';
+  const streamDefaultToken =
+    stream?.platform === 'pump'
+      ? stream.pump_mint || stream.default_chart_token_address
+      : stream?.default_chart_token_address;
+  const token = !isBannerAd ? activeAd?.token_address || searchParams.get('token') || streamDefaultToken || DEFAULT_CHART_TOKEN_ADDRESS : '';
   const chain = activeAd?.chain || searchParams.get('chain') || 'solana';
   const position = activeAd?.position || searchParams.get('position') || 'bottom-right';
   const size = activeAd?.size || searchParams.get('size') || 'medium';
   const theme = searchParams.get('theme') || 'dark';
   const showChart = searchParams.get('showChart') !== 'false' && !isBannerAd;
   const showMedia = searchParams.get('showMedia') !== 'false';
-  const mediaSrc = activeAd?.media_src || (!activeAd ? stream?.default_banner_url : null) || searchParams.get('mediaSrc');
-  const mediaType = activeAd?.media_type || (mediaSrc ? 'image' : null);
+  const mediaSrc = activeAd?.media_src || searchParams.get('mediaSrc') || (!activeAd ? stream?.default_banner_url || DEFAULT_STREAM_BANNER_URL : null);
+  const mediaType = activeAd?.media_type || inferMediaType(mediaSrc);
 
   const { data, loading } = useDexScreener(token, chain);
   const chartSize = useMemo(
