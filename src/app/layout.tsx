@@ -25,6 +25,9 @@ export const metadata: Metadata = {
     title: 'Hypertian',
     description: 'Operational ad rails for X and Pump livestreams.',
   },
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export const viewport: Viewport = {
