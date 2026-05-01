@@ -25,44 +25,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  return (
-    <div className="relative z-10 min-h-screen">
-      {!isHome ? (
-        <header className="sticky top-0 z-40 px-4 pt-4 sm:px-5">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 rounded-[26px] border border-white/20 bg-[rgba(5,10,13,0.85)] px-4 py-3 shadow-[0_18px_60px_rgba(3,8,10,0.28)] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
-            <Link aria-label="Hypertian home" className="flex items-center gap-3" href="/">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(124,228,210,0.42),_rgba(44,109,130,0.22)_55%,_rgba(8,16,19,0.1)_100%)] text-[var(--color-ink)]">
-                <TvMinimalPlay className="h-5 w-5" />
-              </div>
-              <div className="text-xs uppercase tracking-[0.32em] text-[var(--color-accent)]">Hypertian</div>
-            </Link>
+   return (
+     <div className="relative z-10 min-h-screen">
+       {!isHome ? (
+         <header className="sticky top-0 z-40 px-4 pt-4 sm:px-5">
+           <div className="mx-auto flex max-w-6xl flex-col gap-3 rounded-[26px] border border-white/20 bg-[rgba(5,10,13,0.85)] px-4 py-3 shadow-[0_18px_60px_rgba(3,8,10,0.28)] backdrop-blur-xl md:flex-row md:items-center relative">
+             <nav aria-label="Primary" className="flex flex-wrap items-center gap-1.5 md:absolute md:left-1/2 md:-translate-x-1/2">
+               {NAV_ITEMS.map((item) => {
+                 const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+                 return (
+                   <Link
+                     aria-current={active ? 'page' : undefined}
+                     className={`inline-flex min-h-9 items-center rounded-full border px-3.5 py-1.5 text-sm transition ${
+                       active
+                         ? 'border-[rgba(124,228,210,0.5)] bg-[rgba(124,228,210,0.13)] text-white'
+                         : 'border-white/10 bg-white/[0.03] text-[var(--color-copy-soft)] hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
+                     }`}
+                     href={item.href}
+                     key={item.href}
+                   >
+                     {item.label}
+                   </Link>
+                 );
+               })}
+             </nav>
 
-            <nav aria-label="Primary" className="flex flex-wrap items-center gap-1.5">
-              {NAV_ITEMS.map((item) => {
-                const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-                return (
-                  <Link
-                    aria-current={active ? 'page' : undefined}
-                    className={`inline-flex min-h-9 items-center rounded-full border px-3.5 py-1.5 text-sm transition ${
-                      active
-                        ? 'border-[rgba(124,228,210,0.5)] bg-[rgba(124,228,210,0.13)] text-white'
-                        : 'border-white/10 bg-white/[0.03] text-[var(--color-copy-soft)] hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
-                    }`}
-                    href={item.href}
-                    key={item.href}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="flex items-center gap-2">
-              {privyEnabled ? <PrivyAuthControls /> : null}
-            </div>
-          </div>
-        </header>
-      ) : null}
+             <div className="flex items-center gap-2 md:absolute md:right-4">
+               {privyEnabled ? <PrivyAuthControls /> : null}
+             </div>
+           </div>
+         </header>
+       ) : null}
       <main className={isHome ? undefined : 'mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 pb-16 sm:px-5'} id="main-content">
         {children}
       </main>

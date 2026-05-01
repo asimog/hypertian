@@ -80,6 +80,12 @@ export function AdminDashboard({ initialStreams, initialAds, initialFeedback }: 
 
   return (
     <div className="grid gap-5">
+      <div className="soft-card p-6 text-center">
+        <p className="text-2xl font-bold text-white">THERE IS NO ADMIN</p>
+        <p className="mt-2 text-xl text-[var(--color-accent)]">I LOVE YOU</p>
+        <p className="mt-4 text-lg text-[var(--color-copy-soft)]">I HOPE I NEVER HAVE TO USE THIS</p>
+      </div>
+
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-[11px] uppercase tracking-[0.32em] text-[var(--color-accent)]">Admin</div>
