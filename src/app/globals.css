@@ -8,6 +8,8 @@
   font-display: swap;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 :root {
   --black: #000000;
   --teal: #49c5b6;
@@ -36,8 +38,8 @@
     linear-gradient(180deg, #071216 0%, #03080b 100%);
   --gradient-accent: linear-gradient(135deg, #7ce4d2 0%, #86b6ff 48%, #b4d2ce 100%);
   --font-display: "VT323", monospace;
-  --font-sans: "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "SF Mono", "Fira Code", "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --font-sans: "Space Grotesk", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
   --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
   --color-ink: #061015;
   --color-copy: #e9fff9;
