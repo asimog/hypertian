@@ -701,8 +701,8 @@ textarea:focus-visible {
     radial-gradient(circle at 50% 120%, rgba(35, 88, 99, 0.34), transparent 40%),
     linear-gradient(180deg, #071216 0%, #03080b 100%);
   --gradient-accent: linear-gradient(135deg, #7ce4d2 0%, #86b6ff 48%, #b4d2ce 100%);
-  --font-sans: "VT323", "Space Grotesk", "Inter", "Segoe UI", Arial, sans-serif;
-  --font-mono: "VT323", "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-sans: "Space Grotesk", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
   --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
   --color-ink: #061015;
   --color-copy: #e9fff9;
