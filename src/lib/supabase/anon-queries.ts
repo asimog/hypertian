@@ -4,8 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { AdRecord, PaymentRecord, StreamPlatform, StreamRecord } from '@/lib/types';
 
 // Heartbeat staleness window for the public directory. The browser-source overlay pings
-// every STREAM_HEARTBEAT_INTERVAL_MS (15s); 60s gives 4x slack before a stream falls off.
-const DIRECTORY_LIVE_WINDOW_MS = 60_000;
+// every minute; this gives modest slack before a stream falls off from network delay.
+const DIRECTORY_LIVE_WINDOW_MS = 90_000;
 
 function isMissingRelationError(error: unknown) {
   return Boolean(

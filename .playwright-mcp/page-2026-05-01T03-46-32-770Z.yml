@@ -1,0 +1,476 @@
+- generic [ref=e2]:
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#content-area"
+  - generic [ref=e5]:
+    - generic [ref=e9]:
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - link "OpenClaw home page light logo" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e15]: OpenClaw home page
+            - img "light logo" [ref=e16]
+          - button "US English" [ref=e18] [cursor=pointer]:
+            - img "US" [ref=e20]
+            - generic [ref=e22]: English
+            - img [ref=e23]
+        - button "Open search" [ref=e26] [cursor=pointer]:
+          - generic [ref=e27]:
+            - img [ref=e28]
+            - generic [ref=e31]: Search...
+          - generic [ref=e32]: ⌘K
+        - generic [ref=e33]:
+          - navigation [ref=e34]:
+            - list [ref=e35]:
+              - listitem [ref=e36]:
+                - link "GitHub" [ref=e37] [cursor=pointer]:
+                  - /url: https://github.com/openclaw/openclaw
+                  - img [ref=e38]
+                  - text: GitHub
+              - listitem [ref=e39]:
+                - link "Releases" [ref=e40] [cursor=pointer]:
+                  - /url: https://github.com/openclaw/openclaw/releases
+                  - img [ref=e41]
+                  - text: Releases
+              - listitem [ref=e42]:
+                - link "Discord" [ref=e43] [cursor=pointer]:
+                  - /url: https://discord.com/invite/clawd
+                  - img [ref=e44]
+                  - text: Discord
+          - button "Toggle dark mode" [ref=e46] [cursor=pointer]:
+            - img [ref=e47]
+      - generic [ref=e55]:
+        - link "Get started" [ref=e56] [cursor=pointer]:
+          - /url: /
+          - text: Get started
+        - link "Install" [ref=e58] [cursor=pointer]:
+          - /url: /install
+          - text: Install
+        - link "Channels" [ref=e60] [cursor=pointer]:
+          - /url: /channels
+          - text: Channels
+        - link "Agents" [ref=e62] [cursor=pointer]:
+          - /url: /concepts/architecture
+          - text: Agents
+        - link "Tools & Plugins" [ref=e64] [cursor=pointer]:
+          - /url: /tools
+          - text: Tools & Plugins
+        - link "Models" [ref=e66] [cursor=pointer]:
+          - /url: /providers
+          - text: Models
+        - link "Platforms" [ref=e68] [cursor=pointer]:
+          - /url: /platforms
+          - text: Platforms
+        - link "Gateway & Ops" [ref=e70] [cursor=pointer]:
+          - /url: /gateway
+          - text: Gateway & Ops
+        - link "Reference" [ref=e72] [cursor=pointer]:
+          - /url: /cli
+          - text: Reference
+        - link "Help" [ref=e74] [cursor=pointer]:
+          - /url: /help
+          - text: Help
+    - generic [ref=e76]:
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - heading "Overview" [level=5] [ref=e83]
+          - list [ref=e84]:
+            - listitem [ref=e85]:
+              - link "OpenClaw" [ref=e86] [cursor=pointer]:
+                - /url: /
+                - generic [ref=e89]: OpenClaw
+            - listitem [ref=e90]:
+              - link "Showcase" [ref=e91] [cursor=pointer]:
+                - /url: /start/showcase
+                - generic [ref=e94]: Showcase
+            - listitem [ref=e95]:
+              - link "Features" [ref=e96] [cursor=pointer]:
+                - /url: /concepts/features
+                - generic [ref=e99]: Features
+        - generic [ref=e100]:
+          - heading "First steps" [level=5] [ref=e102]
+          - list [ref=e103]:
+            - listitem [ref=e104]:
+              - link "Getting started" [ref=e105] [cursor=pointer]:
+                - /url: /start/getting-started
+                - generic [ref=e108]: Getting started
+            - listitem [ref=e109]:
+              - link "Onboarding Overview" [ref=e110] [cursor=pointer]:
+                - /url: /start/onboarding-overview
+                - generic [ref=e113]: Onboarding Overview
+            - listitem [ref=e114]:
+              - 'link "Onboarding: CLI" [ref=e115] [cursor=pointer]':
+                - /url: /start/wizard
+                - generic [ref=e118]: "Onboarding: CLI"
+            - listitem [ref=e119]:
+              - 'link "Onboarding: macOS App" [ref=e120] [cursor=pointer]':
+                - /url: /start/onboarding
+                - generic [ref=e123]: "Onboarding: macOS App"
+        - generic [ref=e124]:
+          - heading "Guides" [level=5] [ref=e126]
+          - list [ref=e127]:
+            - listitem [ref=e128]:
+              - link "Personal assistant setup" [ref=e129] [cursor=pointer]:
+                - /url: /start/openclaw
+                - generic [ref=e132]: Personal assistant setup
+            - listitem [ref=e133]:
+              - link "CLI reference" [ref=e134] [cursor=pointer]:
+                - /url: /start/wizard-cli-reference
+                - generic [ref=e137]: CLI reference
+            - listitem [ref=e138]:
+              - link "CLI automation" [ref=e139] [cursor=pointer]:
+                - /url: /start/wizard-cli-automation
+                - generic [ref=e142]: CLI automation
+      - generic [ref=e144]:
+        - generic [ref=e147]:
+          - button "On this page" [ref=e148] [cursor=pointer]:
+            - img [ref=e149]
+            - generic [ref=e150]: On this page
+          - list [ref=e152]:
+            - listitem [ref=e153]:
+              - link "OpenClaw 🦞" [ref=e154] [cursor=pointer]:
+                - /url: "#openclaw-"
+            - listitem [ref=e155]:
+              - link "What is OpenClaw?" [ref=e156] [cursor=pointer]:
+                - /url: "#what-is-openclaw"
+            - listitem [ref=e157]:
+              - link "How it works" [ref=e158] [cursor=pointer]:
+                - /url: "#how-it-works"
+            - listitem [ref=e159]:
+              - link "Key capabilities" [ref=e160] [cursor=pointer]:
+                - /url: "#key-capabilities"
+            - listitem [ref=e161]:
+              - link "Quick start" [ref=e162] [cursor=pointer]:
+                - /url: "#quick-start"
+            - listitem [ref=e163]:
+              - link "Dashboard" [ref=e164] [cursor=pointer]:
+                - /url: "#dashboard"
+            - listitem [ref=e165]:
+              - link "Configuration (optional)" [ref=e166] [cursor=pointer]:
+                - /url: "#configuration-optional"
+            - listitem [ref=e167]:
+              - link "Start here" [ref=e168] [cursor=pointer]:
+                - /url: "#start-here"
+            - listitem [ref=e169]:
+              - link "Learn more" [ref=e170] [cursor=pointer]:
+                - /url: "#learn-more"
+        - generic [ref=e171]:
+          - banner [ref=e172]:
+            - generic [ref=e173]:
+              - generic [ref=e174]: Overview
+              - heading "OpenClaw" [level=1] [ref=e176]
+          - generic [ref=e177]:
+            - blockquote [ref=e178]:
+              - heading "Documentation Index" [level=2] [ref=e179]
+              - paragraph [ref=e180]:
+                - text: "Fetch the complete documentation index at:"
+                - link "https://docs.openclaw.ai/llms.txt" [ref=e181] [cursor=pointer]:
+                  - /url: https://docs.openclaw.ai/llms.txt
+              - paragraph [ref=e182]: Use this file to discover all available pages before exploring further.
+            - paragraph [ref=e183]:
+              - img "OpenClaw" [ref=e187]
+            - blockquote [ref=e188]:
+              - generic [ref=e189]:
+                - emphasis [ref=e190]: “EXFOLIATE! EXFOLIATE!”
+                - text: — A space lobster, probably
+            - paragraph [ref=e191]:
+              - generic [ref=e192]:
+                - strong [ref=e193]: Any OS gateway for AI agents across Discord, Google Chat, iMessage, Matrix, Microsoft Teams, Signal, Slack, Telegram, WhatsApp, Zalo, and more.
+                - text: Send a message, get an agent response from your pocket. Run one Gateway across built-in channels, bundled channel plugins, WebChat, and mobile nodes.
+            - generic [ref=e194]:
+              - link "Get Started Install OpenClaw and bring up the Gateway in minutes." [ref=e195] [cursor=pointer]:
+                - generic [ref=e196]:
+                  - img [ref=e198]
+                  - generic [ref=e199]:
+                    - heading "Get Started" [level=2] [ref=e200]
+                    - generic [ref=e202]: Install OpenClaw and bring up the Gateway in minutes.
+              - link "Run Onboarding Guided setup with openclaw onboard and pairing flows." [ref=e203] [cursor=pointer]:
+                - generic [ref=e204]:
+                  - img [ref=e206]
+                  - generic [ref=e207]:
+                    - heading "Run Onboarding" [level=2] [ref=e208]
+                    - generic [ref=e210]:
+                      - text: Guided setup with
+                      - code [ref=e211]: openclaw onboard
+                      - text: and pairing flows.
+              - link "Open the Control UI Launch the browser dashboard for chat, config, and sessions." [ref=e212] [cursor=pointer]:
+                - generic [ref=e213]:
+                  - img [ref=e215]
+                  - generic [ref=e216]:
+                    - heading "Open the Control UI" [level=2] [ref=e217]
+                    - generic [ref=e219]: Launch the browser dashboard for chat, config, and sessions.
+            - heading "Navigate to header What is OpenClaw?" [level=2] [ref=e220]:
+              - link "Navigate to header" [ref=e221] [cursor=pointer]:
+                - /url: "#what-is-openclaw"
+                - img [ref=e223]
+              - generic [ref=e225] [cursor=pointer]: What is OpenClaw?
+            - generic [ref=e226]:
+              - text: OpenClaw is a
+              - strong [ref=e227]: self-hosted gateway
+              - text: that connects your favorite chat apps and channel surfaces — built-in channels plus bundled or external channel plugins such as Discord, Google Chat, iMessage, Matrix, Microsoft Teams, Signal, Slack, Telegram, WhatsApp, Zalo, and more — to AI coding agents like Pi. You run a single Gateway process on your own machine (or a server), and it becomes the bridge between your messaging apps and an always-available AI assistant.
+            - generic [ref=e228]:
+              - strong [ref=e229]: Who is it for?
+              - text: Developers and power users who want a personal AI assistant they can message from anywhere — without giving up control of their data or relying on a hosted service.
+            - strong [ref=e231]: What makes it different?
+            - list [ref=e232]:
+              - listitem [ref=e233]:
+                - strong [ref=e234]: Self-hosted
+                - text: ": runs on your hardware, your rules"
+              - listitem [ref=e235]:
+                - strong [ref=e236]: Multi-channel
+                - text: ": one Gateway serves built-in channels plus bundled or external channel plugins simultaneously"
+              - listitem [ref=e237]:
+                - strong [ref=e238]: Agent-native
+                - text: ": built for coding agents with tool use, sessions, memory, and multi-agent routing"
+              - listitem [ref=e239]:
+                - strong [ref=e240]: Open source
+                - text: ": MIT licensed, community-driven"
+            - generic [ref=e241]:
+              - strong [ref=e242]: What do you need?
+              - text: Node 24 (recommended), or Node 22 LTS (
+              - code [ref=e243]: 22.14+
+              - text: ) for compatibility, an API key from your chosen provider, and 5 minutes. For best quality and security, use the strongest latest-generation model available.
+            - heading "Navigate to header How it works" [level=2] [ref=e244]:
+              - link "Navigate to header" [ref=e245] [cursor=pointer]:
+                - /url: "#how-it-works"
+                - img [ref=e247]
+              - generic [ref=e249] [cursor=pointer]: How it works
+            - generic [ref=e250]: The Gateway is the single source of truth for sessions, routing, and channel connections.
+            - heading "Navigate to header Key capabilities" [level=2] [ref=e251]:
+              - link "Navigate to header" [ref=e252] [cursor=pointer]:
+                - /url: "#key-capabilities"
+                - img [ref=e254]
+              - generic [ref=e256] [cursor=pointer]: Key capabilities
+            - generic [ref=e257]:
+              - link "Multi-channel gateway Discord, iMessage, Signal, Slack, Telegram, WhatsApp, WebChat, and more with a single Gateway process." [ref=e258] [cursor=pointer]:
+                - generic [ref=e259]:
+                  - img [ref=e261]
+                  - generic [ref=e262]:
+                    - heading "Multi-channel gateway" [level=2] [ref=e263]
+                    - generic [ref=e265]: Discord, iMessage, Signal, Slack, Telegram, WhatsApp, WebChat, and more with a single Gateway process.
+              - link "Plugin channels Bundled plugins add Matrix, Nostr, Twitch, Zalo, and more in normal current releases." [ref=e266] [cursor=pointer]:
+                - generic [ref=e267]:
+                  - img [ref=e269]
+                  - generic [ref=e270]:
+                    - heading "Plugin channels" [level=2] [ref=e271]
+                    - generic [ref=e273]: Bundled plugins add Matrix, Nostr, Twitch, Zalo, and more in normal current releases.
+              - link "Multi-agent routing Isolated sessions per agent, workspace, or sender." [ref=e274] [cursor=pointer]:
+                - generic [ref=e275]:
+                  - img [ref=e277]
+                  - generic [ref=e278]:
+                    - heading "Multi-agent routing" [level=2] [ref=e279]
+                    - generic [ref=e281]: Isolated sessions per agent, workspace, or sender.
+              - link "Media support Send and receive images, audio, and documents." [ref=e282] [cursor=pointer]:
+                - generic [ref=e283]:
+                  - img [ref=e285]
+                  - generic [ref=e286]:
+                    - heading "Media support" [level=2] [ref=e287]
+                    - generic [ref=e289]: Send and receive images, audio, and documents.
+              - link "Web Control UI Browser dashboard for chat, config, sessions, and nodes." [ref=e290] [cursor=pointer]:
+                - generic [ref=e291]:
+                  - img [ref=e293]
+                  - generic [ref=e294]:
+                    - heading "Web Control UI" [level=2] [ref=e295]
+                    - generic [ref=e297]: Browser dashboard for chat, config, sessions, and nodes.
+              - link "Mobile nodes Pair iOS and Android nodes for Canvas, camera, and voice-enabled workflows." [ref=e298] [cursor=pointer]:
+                - generic [ref=e299]:
+                  - img [ref=e301]
+                  - generic [ref=e302]:
+                    - heading "Mobile nodes" [level=2] [ref=e303]
+                    - generic [ref=e305]: Pair iOS and Android nodes for Canvas, camera, and voice-enabled workflows.
+            - heading "Navigate to header Quick start" [level=2] [ref=e306]:
+              - link "Navigate to header" [ref=e307] [cursor=pointer]:
+                - /url: "#quick-start"
+                - img [ref=e309]
+              - generic [ref=e311] [cursor=pointer]: Quick start
+            - list [ref=e312]:
+              - listitem [ref=e313]:
+                - generic [ref=e316]:
+                  - generic [ref=e317]: "1"
+                  - link "Navigate to header" [ref=e319] [cursor=pointer]:
+                    - /url: "#"
+                    - img [ref=e321]
+                - generic [ref=e323]:
+                  - paragraph [ref=e324]: Install OpenClaw
+                  - generic [ref=e326]:
+                    - button "Copy the contents from the code block" [ref=e329] [cursor=pointer]:
+                      - img [ref=e330]
+                    - code [ref=e336]:
+                      - generic [ref=e337]: npm install -g openclaw@latest
+              - listitem [ref=e338]:
+                - generic [ref=e341]:
+                  - generic [ref=e342]: "2"
+                  - link "Navigate to header" [ref=e344] [cursor=pointer]:
+                    - /url: "#"
+                    - img [ref=e346]
+                - generic [ref=e348]:
+                  - paragraph [ref=e349]: Onboard and install the service
+                  - generic [ref=e351]:
+                    - button "Copy the contents from the code block" [ref=e354] [cursor=pointer]:
+                      - img [ref=e355]
+                    - code [ref=e361]:
+                      - generic [ref=e362]: openclaw onboard --install-daemon
+              - listitem [ref=e363]:
+                - generic [ref=e366]:
+                  - generic [ref=e367]: "3"
+                  - link "Navigate to header" [ref=e369] [cursor=pointer]:
+                    - /url: "#"
+                    - img [ref=e371]
+                - generic [ref=e373]:
+                  - paragraph [ref=e374]: Chat
+                  - generic [ref=e375]:
+                    - generic [ref=e376]: "Open the Control UI in your browser and send a message:"
+                    - generic [ref=e377]:
+                      - button "Copy the contents from the code block" [ref=e380] [cursor=pointer]:
+                        - img [ref=e381]
+                      - code [ref=e387]:
+                        - generic [ref=e388]: openclaw dashboard
+                    - generic [ref=e389]:
+                      - text: Or connect a channel (
+                      - link "Telegram" [ref=e390] [cursor=pointer]:
+                        - /url: /channels/telegram
+                      - text: is fastest) and chat from your phone.
+            - generic [ref=e391]:
+              - text: Need the full install and dev setup? See
+              - link "Getting Started" [ref=e392] [cursor=pointer]:
+                - /url: /start/getting-started
+              - text: .
+            - heading "Navigate to header Dashboard" [level=2] [ref=e393]:
+              - link "Navigate to header" [ref=e394] [cursor=pointer]:
+                - /url: "#dashboard"
+                - img [ref=e396]
+              - generic [ref=e398] [cursor=pointer]: Dashboard
+            - generic [ref=e399]: Open the browser Control UI after the Gateway starts.
+            - list [ref=e400]:
+              - listitem [ref=e401]:
+                - text: "Local default:"
+                - link "http://127.0.0.1:18789/" [ref=e402] [cursor=pointer]:
+                  - /url: http://127.0.0.1:18789/
+              - listitem [ref=e403]:
+                - text: "Remote access:"
+                - link "Web surfaces" [ref=e404] [cursor=pointer]:
+                  - /url: /web
+                - text: and
+                - link "Tailscale" [ref=e405] [cursor=pointer]:
+                  - /url: /gateway/tailscale
+            - paragraph [ref=e406]:
+              - img "OpenClaw" [ref=e410]
+            - heading "Navigate to header Configuration (optional)" [level=2] [ref=e411]:
+              - link "Navigate to header" [ref=e412] [cursor=pointer]:
+                - /url: "#configuration-optional"
+                - img [ref=e414]
+              - generic [ref=e416] [cursor=pointer]: Configuration (optional)
+            - generic [ref=e417]:
+              - text: Config lives at
+              - code [ref=e418]: ~/.openclaw/openclaw.json
+              - text: .
+            - list [ref=e419]:
+              - listitem [ref=e420]:
+                - text: If you
+                - strong [ref=e421]: do nothing
+                - text: ", OpenClaw uses the bundled Pi binary in RPC mode with per-sender sessions."
+              - listitem [ref=e422]:
+                - text: If you want to lock it down, start with
+                - code [ref=e423]: channels.whatsapp.allowFrom
+                - text: and (for groups) mention rules.
+            - generic [ref=e424]: "Example:"
+            - generic [ref=e425]:
+              - button "Copy the contents from the code block" [ref=e428] [cursor=pointer]:
+                - img [ref=e429]
+              - code [ref=e435]:
+                - generic [ref=e436]: "{"
+                - generic [ref=e437]: "channels: {"
+                - generic [ref=e438]: "whatsapp: {"
+                - generic [ref=e439]: "allowFrom: [\"+15555550123\"],"
+                - generic [ref=e440]: "groups: { \"*\": { requireMention: true } },"
+                - generic [ref=e441]: "},"
+                - generic [ref=e442]: "},"
+                - generic [ref=e443]: "messages: { groupChat: { mentionPatterns: [\"@openclaw\"] } },"
+                - generic [ref=e444]: "}"
+            - heading "Navigate to header Start here" [level=2] [ref=e445]:
+              - link "Navigate to header" [ref=e446] [cursor=pointer]:
+                - /url: "#start-here"
+                - img [ref=e448]
+              - generic [ref=e450] [cursor=pointer]: Start here
+            - generic [ref=e451]:
+              - link "Docs hubs All docs and guides, organized by use case." [ref=e452] [cursor=pointer]:
+                - generic [ref=e453]:
+                  - img [ref=e455]
+                  - generic [ref=e456]:
+                    - heading "Docs hubs" [level=2] [ref=e457]
+                    - generic [ref=e459]: All docs and guides, organized by use case.
+              - link "Configuration Core Gateway settings, tokens, and provider config." [ref=e460] [cursor=pointer]:
+                - generic [ref=e461]:
+                  - img [ref=e463]
+                  - generic [ref=e464]:
+                    - heading "Configuration" [level=2] [ref=e465]
+                    - generic [ref=e467]: Core Gateway settings, tokens, and provider config.
+              - link "Remote access SSH and tailnet access patterns." [ref=e468] [cursor=pointer]:
+                - generic [ref=e469]:
+                  - img [ref=e471]
+                  - generic [ref=e472]:
+                    - heading "Remote access" [level=2] [ref=e473]
+                    - generic [ref=e475]: SSH and tailnet access patterns.
+              - link "Channels Channel-specific setup for Feishu, Microsoft Teams, WhatsApp, Telegram, Discord, and more." [ref=e476] [cursor=pointer]:
+                - generic [ref=e477]:
+                  - img [ref=e479]
+                  - generic [ref=e480]:
+                    - heading "Channels" [level=2] [ref=e481]
+                    - generic [ref=e483]: Channel-specific setup for Feishu, Microsoft Teams, WhatsApp, Telegram, Discord, and more.
+              - link "Nodes iOS and Android nodes with pairing, Canvas, camera, and device actions." [ref=e484] [cursor=pointer]:
+                - generic [ref=e485]:
+                  - img [ref=e487]
+                  - generic [ref=e488]:
+                    - heading "Nodes" [level=2] [ref=e489]
+                    - generic [ref=e491]: iOS and Android nodes with pairing, Canvas, camera, and device actions.
+              - link "Help Common fixes and troubleshooting entry point." [ref=e492] [cursor=pointer]:
+                - generic [ref=e493]:
+                  - img [ref=e495]
+                  - generic [ref=e496]:
+                    - heading "Help" [level=2] [ref=e497]
+                    - generic [ref=e499]: Common fixes and troubleshooting entry point.
+            - heading "Navigate to header Learn more" [level=2] [ref=e500]:
+              - link "Navigate to header" [ref=e501] [cursor=pointer]:
+                - /url: "#learn-more"
+                - img [ref=e503]
+              - generic [ref=e505] [cursor=pointer]: Learn more
+            - generic [ref=e506]:
+              - link "Full feature list Complete channel, routing, and media capabilities." [ref=e507] [cursor=pointer]:
+                - generic [ref=e508]:
+                  - img [ref=e510]
+                  - generic [ref=e511]:
+                    - heading "Full feature list" [level=2] [ref=e512]
+                    - generic [ref=e514]: Complete channel, routing, and media capabilities.
+              - link "Multi-agent routing Workspace isolation and per-agent sessions." [ref=e515] [cursor=pointer]:
+                - generic [ref=e516]:
+                  - img [ref=e518]
+                  - generic [ref=e519]:
+                    - heading "Multi-agent routing" [level=2] [ref=e520]
+                    - generic [ref=e522]: Workspace isolation and per-agent sessions.
+              - link "Security Tokens, allowlists, and safety controls." [ref=e523] [cursor=pointer]:
+                - generic [ref=e524]:
+                  - img [ref=e526]
+                  - generic [ref=e527]:
+                    - heading "Security" [level=2] [ref=e528]
+                    - generic [ref=e530]: Tokens, allowlists, and safety controls.
+              - link "Troubleshooting Gateway diagnostics and common errors." [ref=e531] [cursor=pointer]:
+                - generic [ref=e532]:
+                  - img [ref=e534]
+                  - generic [ref=e535]:
+                    - heading "Troubleshooting" [level=2] [ref=e536]
+                    - generic [ref=e538]: Gateway diagnostics and common errors.
+              - link "About and credits Project origins, contributors, and license." [ref=e539] [cursor=pointer]:
+                - generic [ref=e540]:
+                  - img [ref=e542]
+                  - generic [ref=e543]:
+                    - heading "About and credits" [level=2] [ref=e544]
+                    - generic [ref=e546]: Project origins, contributors, and license.
+          - link "Showcase" [ref=e548] [cursor=pointer]:
+            - /url: /start/showcase
+            - generic [ref=e549]: Showcase
+            - img [ref=e550]
+          - contentinfo [ref=e552]:
+            - link "Powered by This documentation is built and hosted on Mintlify, a developer documentation platform" [ref=e555] [cursor=pointer]:
+              - /url: https://www.mintlify.com?utm_campaign=poweredBy&utm_medium=referral&utm_source=clawdhub
+              - generic [ref=e556]: Powered by
+              - img [ref=e557]
+              - generic [ref=e566]: This documentation is built and hosted on Mintlify, a developer documentation platform

@@ -19,7 +19,7 @@ type HeartbeatState = {
   everReceived: boolean;
 };
 
-const HEARTBEAT_POLL_MS = 4_000;
+const HEARTBEAT_POLL_MS = 60_000;
 const MAX_BANNER_BYTES = 1024 * 1024;
 
 function resolveIdentity(input: string, platform: StreamPlatform, streamUrl: string) {
@@ -387,7 +387,7 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
       <section className="grid gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Your streams</h2>
-          <span className="text-xs text-[var(--color-copy-soft)]">{liveCount} live · heartbeat polled every 4s</span>
+          <span className="text-xs text-[var(--color-copy-soft)]">{liveCount} live · heartbeat checked every minute</span>
         </div>
         {!streams.length ? (
           <div className="soft-card flex items-start gap-3">
@@ -436,7 +436,7 @@ export function StreamerWorkspace({ initialStreams, initialPendingAds }: Props) 
                     {overlayUrl ? <a className="secondary-button" href={overlayUrl} rel="noreferrer" target="_blank">Open preview</a> : null}
                   </div>
                   <p className="mt-2 text-xs text-[var(--color-copy-soft)]">
-                    Add as Browser Source in OBS (1920×1080, transparent). Heartbeat fires every 15s once it loads.
+                    Add as Browser Source in OBS (1920×1080, transparent). Heartbeat fires every minute once it loads.
                   </p>
                 </div>
 

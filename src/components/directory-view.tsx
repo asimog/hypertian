@@ -56,7 +56,7 @@ export function DirectoryView({ initialStreams }: Props) {
 
        {!streams.length ? (
         <div className="soft-card text-sm text-[var(--color-copy-soft)]">
-          No streams are live right now. Streams appear here automatically when an overlay heartbeat lands within the last 60 seconds.
+          No streams are live right now. Streams appear here automatically when an overlay heartbeat lands within the last minute.
         </div>
       ) : null}
 

@@ -3,7 +3,7 @@
 The product surface is now four primary public routes — Streamer, Directory, Feed, Music — plus
 a footer-linked Feedback form and an `ADMIN_PASSWORD`-gated `/admin`. Privy is optional; nothing requires sign-in. The
 overlay route fires the heartbeats; the directory shows streams whose heartbeat landed in
-the last 60 seconds. Commission is wired through but disabled (`COMMISSION_ENABLED = false`).
+the last minute, with a small grace window. Commission is wired through but disabled (`COMMISSION_ENABLED = false`).
 Pump stream payments are pinned to the Pump deployer wallet; X stream payments use the
 wallet submitted in the streamer form.
 
@@ -22,7 +22,7 @@ reference but never routed.
 | [src/app/music/page.tsx](src/app/music/page.tsx) | Persistent music route with MP3 playlist/upload, YouTube playback, and reactive Earth visualizer. |
 | [src/app/feedback/page.tsx](src/app/feedback/page.tsx) | Footer-linked bug / ad-issue / feature submission form. |
 | [src/app/admin/page.tsx](src/app/admin/page.tsx) | Password-gated moderation dashboard. |
-| [src/app/overlay/[streamId]/page.tsx](src/app/overlay/[streamId]/page.tsx) | OBS browser-source overlay; pings `/api/streams/heartbeat` every 15s. |
+| [src/app/overlay/[streamId]/page.tsx](src/app/overlay/[streamId]/page.tsx) | OBS browser-source overlay; pings `/api/streams/heartbeat` every minute. |
 
 ## UI Shell And Views
 

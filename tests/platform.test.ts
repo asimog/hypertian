@@ -18,10 +18,10 @@ describe('platform helpers', () => {
     expect(() => assertHttpsUrl('not-a-url')).toThrow('valid URL');
   });
 
-  it('treats 30 second heartbeats as fresh', () => {
+  it('treats heartbeats as fresh for the minute cadence grace window', () => {
     const now = Date.now();
-    expect(isFreshHeartbeat(new Date(now - 29_000).toISOString(), now)).toBe(true);
-    expect(isFreshHeartbeat(new Date(now - 31_000).toISOString(), now)).toBe(false);
+    expect(isFreshHeartbeat(new Date(now - 89_000).toISOString(), now)).toBe(true);
+    expect(isFreshHeartbeat(new Date(now - 91_000).toISOString(), now)).toBe(false);
   });
 
   it('validates Solana wallet addresses', () => {

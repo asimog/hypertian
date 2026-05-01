@@ -11,8 +11,8 @@ export const FALLBACK_STREAM_BANNER_URL = '/social-futures.gif';
 // Flip COMMISSION_ENABLED back to true (and restore the BPS) to charge again.
 export const COMMISSION_ENABLED = false;
 export const PUMPFUN_COMMISSION_BPS = COMMISSION_ENABLED ? 1_000 : 0;
-export const STREAM_HEARTBEAT_INTERVAL_MS = 15_000;
-export const STREAM_HEARTBEAT_STALE_MS = 30_000;
+export const STREAM_HEARTBEAT_INTERVAL_MS = 60_000;
+export const STREAM_HEARTBEAT_STALE_MS = 90_000;
 
 export const STREAM_PLATFORM_NAMES = {
   x: 'X',
