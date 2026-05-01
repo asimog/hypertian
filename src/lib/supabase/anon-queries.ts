@@ -185,7 +185,7 @@ export interface FeedJobCard {
   payments: Pick<PaymentRecord, 'id' | 'amount' | 'currency' | 'status' | 'tx_hash' | 'verified_at' | 'created_at'>[];
 }
 
-export async function listPublicFeed(limit = 60) {
+export async function listPublicFeed(limit = 60): Promise<FeedJobCard[]> {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('ads')
@@ -233,6 +233,59 @@ export async function listPublicFeed(limit = 60) {
       payments: payments ?? [],
     } satisfies FeedJobCard;
   });
+}
+
+export async function getPublicFeedItem(adId: string): Promise<FeedJobCard | null> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from('ads')
+    .select(`
+      id,
+      stream_id,
+      ad_type,
+      status,
+      token_address,
+      chain,
+      dex_pair_address,
+      banner_url,
+      duration_minutes,
+      starts_at,
+      payment_tx_signature,
+      position,
+      size,
+      is_active,
+      is_hidden,
+      expires_at,
+      created_at,
+      streams(id, display_name, platform),
+      payments(id, amount, currency, status, tx_hash, verified_at, created_at)
+    `)
+    .eq('id', adId)
+    .eq('is_hidden', false)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === 'PGRST205') {
+      return null;
+    }
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const { streams, payments, ...ad } = data as unknown as Partial<AdRecord> & {
+    streams: { id: string; display_name: string | null; platform: StreamPlatform } | { id: string; display_name: string | null; platform: StreamPlatform }[] | null;
+    payments: FeedJobCard['payments'];
+  };
+  const stream = Array.isArray(streams) ? streams[0] ?? null : streams;
+
+  return {
+    ad: ad as AdRecord,
+    stream,
+    payments: payments ?? [],
+  } satisfies FeedJobCard;
 }
 
 export async function listOwnerPendingBannerAds(ownerSession: string) {

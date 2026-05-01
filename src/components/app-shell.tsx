@@ -61,21 +61,50 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
       <FooterMusicControls />
       <AnimationToggle />
-      <footer className="mx-auto grid w-full max-w-6xl gap-3 px-4 pb-8 sm:px-5 md:grid-cols-[1fr_auto_1fr] md:items-center">
-        <div aria-hidden="true" />
-        <div className="flex flex-wrap items-center justify-center gap-2 text-base text-[var(--color-copy-faint)]">
-          <span>Hypertian</span>
-          <span aria-hidden>·</span>
-          <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/feedback">
-            Feedback
-          </Link>
-          <span aria-hidden>·</span>
-          <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/admin">
-            Admin
-          </Link>
-        </div>
-        <div aria-hidden="true" />
-      </footer>
+       <footer className="mx-auto grid w-full max-w-6xl gap-3 px-4 pb-8 sm:px-5 md:grid-cols-[1fr_auto_1fr] md:items-center">
+         <div aria-hidden="true" />
+         <div className="flex flex-wrap items-center justify-center gap-2 text-base text-[var(--color-copy-faint)]">
+           <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/terms">
+             Terms
+           </Link>
+           <span aria-hidden>·</span>
+           <a
+             href="https://github.com/asimog"
+             target="_blank"
+             rel="noopener noreferrer"
+             className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline"
+           >
+             GitHub
+           </a>
+           <span aria-hidden>·</span>
+           <a
+             href="https://x.com/HyperMythX"
+             target="_blank"
+             rel="noopener noreferrer"
+             className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline"
+           >
+             @HyperMythX
+           </a>
+           <span aria-hidden>·</span>
+           <a
+             href="https://t.me/HyperMythX"
+             target="_blank"
+             rel="noopener noreferrer"
+             className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline"
+           >
+             Telegram
+           </a>
+           <span aria-hidden>·</span>
+           <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/feedback">
+             Feedback
+           </Link>
+           <span aria-hidden>·</span>
+           <Link className="text-[var(--color-copy-soft)] underline-offset-4 hover:text-white hover:underline" href="/admin">
+             Admin
+           </Link>
+         </div>
+         <div aria-hidden="true" />
+       </footer>
     </div>
   );
 }
