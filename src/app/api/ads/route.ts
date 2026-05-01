@@ -13,7 +13,7 @@ const schema = z.object({
   tokenAddress: z.string().optional().nullable(),
   chain: z.enum(['solana', 'ethereum', 'base', 'bsc', 'arbitrum', 'polygon']).default('solana'),
   bannerUrl: z.string().optional().nullable(),
-  position: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right', 'full']).default('bottom-right'),
+  position: z.enum(['bottom-right']).default('bottom-right'),
   size: z.enum(['small', 'medium', 'large']).default('medium'),
   advertiserContact: z.string().max(160).optional().nullable(),
   advertiserNote: z.string().max(500).optional().nullable(),

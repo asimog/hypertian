@@ -4,14 +4,14 @@ import { parseOverlayConfigs } from '../src/lib/overlay';
 describe('parseOverlayConfigs', () => {
   it('parses CSV-style overlay params and falls back safely', () => {
     const search = new URLSearchParams(
-      'token=aaa,bbb&chain=solana,base&position=top-left,bottom-right&size=large,medium&theme=dark,light&show_sponsor=true,false&sponsor_label=One,Two',
+      'token=aaa,bbb&chain=solana,base&size=large,medium&theme=dark,light&show_sponsor=true,false&sponsor_label=One,Two',
     );
 
     expect(parseOverlayConfigs(search)).toEqual([
       {
         token: 'aaa',
         chain: 'solana',
-        position: 'top-left',
+        position: 'bottom-right',
         size: 'large',
         theme: 'dark',
         showSponsor: true,

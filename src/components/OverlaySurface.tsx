@@ -16,22 +16,7 @@ interface OverlaySurfaceProps {
 }
 
 function getPositionClass(position: string) {
-  switch (position) {
-    case 'top-left':
-      return 'top-6 left-6';
-    case 'top-right':
-      return 'top-6 right-6';
-    case 'center':
-      return 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
-    case 'bottom-left':
-      return 'bottom-10 left-6';
-    case 'bottom-right':
-      return 'bottom-10 right-6';
-    case 'full':
-      return 'inset-0 w-full h-full justify-center items-center';
-    default:
-      return 'bottom-10 right-6';
-  }
+  return 'bottom-10 right-6';
 }
 
 function inferMediaType(src: string | null): OverlayActiveAd['media_type'] {
@@ -49,6 +34,10 @@ function inferMediaType(src: string | null): OverlayActiveAd['media_type'] {
 }
 
 export default function OverlaySurface({ platform, searchParams }: OverlaySurfaceProps) {
+  // OBS Overlay Window Size Recommendation:
+  // For best results, set your browser source to 1920x1080 (or your stream resolution)
+  // and use "Scale to inner size" with "Constrain proportions" unchecked.
+  // Position the overlay in OBS to match your stream layout.
   const streamId = searchParams.get('stream');
   const heartbeatKey = searchParams.get('key');
   const [activeAds, setActiveAds] = useState<OverlayActiveAd[]>([]);
@@ -61,11 +50,11 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
       : stream?.default_chart_token_address;
   const token = !isBannerAd ? activeAd?.token_address || searchParams.get('token') || streamDefaultToken || DEFAULT_CHART_TOKEN_ADDRESS : '';
   const chain = activeAd?.chain || searchParams.get('chain') || 'solana';
-  const position = activeAd?.position || searchParams.get('position') || 'bottom-right';
+  const position = activeAd?.position || 'bottom-right';
   const size = activeAd?.size || searchParams.get('size') || 'medium';
   const theme = searchParams.get('theme') || 'dark';
   const showChart = searchParams.get('showChart') !== 'false' && !isBannerAd;
-  const showMedia = searchParams.get('showMedia') !== 'false';
+  const showMedia = searchParams.get('showMedia') !== 'false' && isBannerAd;
   const mediaSrc = activeAd?.media_src || searchParams.get('mediaSrc') || (!activeAd ? stream?.default_banner_url || DEFAULT_STREAM_BANNER_URL : null);
   const mediaType = activeAd?.media_type || inferMediaType(mediaSrc);
 

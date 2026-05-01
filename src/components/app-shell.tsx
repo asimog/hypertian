@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
 
             <div className="flex items-center gap-2">
-              {privyEnabled ? <PrivyAuthControls /> : <span className="text-xs text-[var(--color-copy-faint)]">Sign-in optional</span>}
+              {privyEnabled ? <PrivyAuthControls /> : null}
             </div>
           </div>
         </header>
@@ -175,9 +175,9 @@ export function MetricCard({
 }) {
   return (
     <div className="panel rounded-[16px] p-3">
-      <div className="text-[9px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">{label}</div>
-      <div className="mt-0.5 text-xl font-semibold text-white">{value}</div>
-      <p className="text-[10px] text-[var(--color-copy-soft)]">{hint}</p>
+      <div className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-copy-faint)]">{label}</div>
+      <div className="mt-1 text-2xl font-semibold text-white">{value}</div>
+      <p className="text-[11px] text-[var(--color-copy-soft)]">{hint}</p>
     </div>
   );
 }

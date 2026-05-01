@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AdPosition, AdSize, OverlayAdConfig, OverlayTheme, SupportedChain } from '@/lib/types';
 
-const positionSchema = z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right', 'full']);
+const positionSchema = z.enum(['bottom-right']);
 const sizeSchema = z.enum(['small', 'medium', 'large']);
 const themeSchema = z.enum(['dark', 'light']);
 const chainSchema = z.enum(['solana', 'ethereum', 'base', 'bsc', 'arbitrum', 'polygon']);

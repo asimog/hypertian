@@ -1,7 +1,7 @@
 export type UserRole = 'streamer' | 'sponsor';
 export type AssetKind = 'SOL' | 'USDC';
 export type PaymentStatus = 'pending' | 'submitted' | 'verified' | 'failed';
-export type AdPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'full';
+export type AdPosition = 'bottom-right';
 export type AdSize = 'small' | 'medium' | 'large';
 export type OverlayTheme = 'dark' | 'light';
 export type SupportedChain = 'solana' | 'ethereum' | 'base' | 'bsc' | 'arbitrum' | 'polygon';
