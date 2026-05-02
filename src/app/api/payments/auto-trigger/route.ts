@@ -1,7 +1,6 @@
 import { fail, ok } from '@/lib/http';
 import { autoTriggerAndSweepPayment } from '@/lib/solana';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { updatePaymentAndGetAd } from '@/lib/supabase/queries';
 import { z } from 'zod';
 
 const schema = z.object({
