@@ -32,10 +32,10 @@ export default function TermsPage() {
 
         <h4 className="text-lg font-semibold text-white mt-5 mb-2">2. Project Overview &amp; Not Advice</h4>
         <p className="italic">
-          "If we knew what it was we were doing, it would not be called research, would it?" — Albert Einstein
+          'If we knew what it was we were doing, it would not be called research, would it?' — Albert Einstein
         </p>
         <p className="italic">
-          "Behind it all is surely an idea so simple, so beautiful, that when we grasp it — in a decade, a century, or a millennium — we will all say to each other, how could it have been otherwise? How could we have been so stupid?" — John Archibald Wheeler
+          'Behind it all is surely an idea so simple, so beautiful, that when we grasp it — in a decade, a century, or a millennium — we will all say to each other, how could it have been otherwise? How could we have been so stupid?' — John Archibald Wheeler
         </p>
         <p>
           HyperMyths is an experimental ecosystem for gamified internet capital markets, MMO alternate reality gameplay, AI media generation, token-community gaming, advertising, creator attention markets, prediction markets, computation markets, autonomous agents, open-source software testing, model testing, research coordination, governance experimentation, capital-management experiments, talent-management experiments, cancer synthetic data generation quests, physics synthetic data generation quests and community world creation.
