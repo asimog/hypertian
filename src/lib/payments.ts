@@ -37,9 +37,19 @@ export async function verifyPaymentRecord(paymentId: string) {
     };
   }
 
+  // Use the transaction hash from the payment status if available, otherwise skip
+  if (!status.txHash) {
+    return {
+      found: true as const,
+      payment,
+      status: 'pending' as const,
+      amountReceived: status.amountReceived,
+    };
+  }
+
   const verifiedPayment = await verifyPayment({
     paymentId,
-    txHash: status.txHash || payment.tx_hash || payment.deposit_address,
+    txHash: status.txHash,
   });
 
   return {
@@ -53,16 +63,22 @@ export async function verifyPaymentRecord(paymentId: string) {
 export async function verifyPendingPaymentsBatch(limit = 25) {
   const pendingPayments = await listPendingPayments(limit);
   let verifiedCount = 0;
+  const errors: string[] = [];
 
   for (const payment of pendingPayments) {
-    const result = await verifyPaymentRecord(payment.id);
-    if (result.found && result.status === 'verified') {
-      verifiedCount += 1;
+    try {
+      const result = await verifyPaymentRecord(payment.id);
+      if (result.found && result.status === 'verified') {
+        verifiedCount += 1;
+      }
+    } catch (error) {
+      errors.push(`${payment.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   return {
     checked: pendingPayments.length,
     verified: verifiedCount,
+    errors: errors.length > 0 ? errors : undefined,
   };
 }

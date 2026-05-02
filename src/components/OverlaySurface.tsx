@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import DexChart from '@/components/DexChart';
 import MediaBanner from '@/components/MediaBanner';
 import OverlayDisclosure from '@/components/OverlayDisclosure';
@@ -42,27 +42,85 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
   const heartbeatKey = searchParams.get('key');
   const [activeAds, setActiveAds] = useState<OverlayActiveAd[]>([]);
   const [stream, setStream] = useState<StreamRecord | null>(null);
+  const lastFetchTimeRef = useRef<number>(0);
+  const minFetchIntervalMs = 10_000; // Rate limit token calls to once per 10 minutes
+  const lastTokenCallRef = useRef<Record<string, number>>({});
+  const tokenCallCooldownMs = 10 * 60 * 1000; // 10 minutes in ms
+
   const activeAd = activeAds[0] ?? null;
   const isBannerAd = activeAd?.ad_type === 'banner';
-  const streamDefaultToken =
-    stream?.platform === 'pump'
-      ? stream.pump_mint || stream.default_chart_token_address
-      : stream?.default_chart_token_address;
-  const token = !isBannerAd ? activeAd?.token_address || searchParams.get('token') || streamDefaultToken || DEFAULT_CHART_TOKEN_ADDRESS : '';
+
+  // Use streamer's default chart token and banner when no ad is active
+  const streamDefaultToken = stream?.platform === 'pump'
+    ? stream.pump_mint || stream.default_chart_token_address
+    : stream?.default_chart_token_address;
+  const streamBannerUrl = stream?.default_banner_url || DEFAULT_STREAM_BANNER_URL;
+
+  // Priority: 1) Active ad, 2) URL params, 3) Streamer defaults, 4) Global defaults
+  const token = !isBannerAd
+    ? activeAd?.token_address || searchParams.get('token') || streamDefaultToken || DEFAULT_CHART_TOKEN_ADDRESS
+    : '';
   const chain = activeAd?.chain || searchParams.get('chain') || 'solana';
   const position = activeAd?.position || 'bottom-right';
   const size = activeAd?.size || searchParams.get('size') || 'medium';
   const theme = searchParams.get('theme') || 'dark';
   const showChart = searchParams.get('showChart') !== 'false' && !isBannerAd;
-  const showMedia = searchParams.get('showMedia') !== 'false' && isBannerAd;
-  const mediaSrc = activeAd?.media_src || searchParams.get('mediaSrc') || (!activeAd ? stream?.default_banner_url || DEFAULT_STREAM_BANNER_URL : null);
+
+  // Show media if: there's an active banner ad OR no ad exists but we should show default media
+  const shouldShowDefaultMedia = !isBannerAd && !activeAd && searchParams.get('showMedia') !== 'false';
+  const showMedia = (searchParams.get('showMedia') !== 'false' && isBannerAd) || shouldShowDefaultMedia;
+
+  // Media source: 1) Active banner ad, 2) Streamer default banner, 3) Fallback
+  const mediaSrc = activeAd?.media_src || (shouldShowDefaultMedia ? streamBannerUrl : searchParams.get('mediaSrc') || null);
   const mediaType = activeAd?.media_type || inferMediaType(mediaSrc);
 
-  const { data, loading } = useDexScreener(token, chain);
+  // Rate-limited token key to prevent exceeding API quotas
+  const rateLimitedTokenKey = useMemo(() => {
+    const now = Date.now();
+    const key = `${token}-${chain}`;
+    const lastCall = lastTokenCallRef.current[key] || 0;
+    // Only allow new calls after cooldown period for the same token
+    if (now - lastCall < tokenCallCooldownMs) {
+      // Return the previous key to retry with cached data
+      return key;
+    }
+    lastTokenCallRef.current[key] = now;
+    return key;
+  }, [token, chain]);
+
+  const { data, loading } = useDexScreener(rateLimitedTokenKey, chain);
   const chartSize = useMemo(
     () => (size === 'large' ? { width: 480, height: 260 } : { width: 380, height: 210 }),
     [size],
   );
+
+  // Use callback to prevent unnecessary re-renders
+  const loadActiveAds = useCallback(async () => {
+    if (!streamId) {
+      setActiveAds([]);
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < minFetchIntervalMs) {
+      return; // Rate limit API calls
+    }
+    lastFetchTimeRef.current = now;
+
+    try {
+      const response = await fetch(`/api/ads?stream=${encodeURIComponent(streamId)}`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        return;
+      }
+      const json = (await response.json()) as { ads?: OverlayActiveAd[]; stream?: StreamRecord | null };
+      setStream(json.stream ?? null);
+      setActiveAds(json.ads ?? []);
+    } catch {
+      // Query-param previews should keep working even when the ad feed is unreachable.
+    }
+  }, [streamId]);
 
   useEffect(() => {
     document.documentElement.style.background = 'transparent';
@@ -89,27 +147,6 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
         }, STREAM_HEARTBEAT_INTERVAL_MS)
       : null;
 
-    const loadActiveAds = async () => {
-      if (!streamId) {
-        setActiveAds([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/ads?stream=${encodeURIComponent(streamId)}`, {
-          cache: 'no-store',
-        });
-        if (!response.ok) {
-          return;
-        }
-        const json = (await response.json()) as { ads?: OverlayActiveAd[]; stream?: StreamRecord | null };
-        setStream(json.stream ?? null);
-        setActiveAds(json.ads ?? []);
-      } catch {
-        // Query-param previews should keep working even when the ad feed is unreachable.
-      }
-    };
-
     void loadActiveAds();
     const adRefresh = streamId
       ? setInterval(() => {
@@ -135,7 +172,7 @@ export default function OverlaySurface({ platform, searchParams }: OverlaySurfac
       }
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [heartbeatKey, streamId]);
+  }, [heartbeatKey, streamId, loadActiveAds]);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-transparent select-none">

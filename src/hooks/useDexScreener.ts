@@ -30,8 +30,11 @@ export interface DexScreenerState {
 }
 
 const POLL_INTERVAL_MS = 15_000;
+const TOKEN_CALL_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
 
-export function useDexScreener(tokenAddress: string, chain = 'solana') {
+const tokenCallTimestamps: Record<string, number> = {};
+
+export function useDexScreener(tokenAddress: string | null, chain = 'solana') {
   const [state, setState] = useState<DexScreenerState>({
     data: null,
     history: [],
@@ -57,6 +60,17 @@ export function useDexScreener(tokenAddress: string, chain = 'solana') {
       setState((current) => ({ ...current, loading: false, error: 'Missing token address.' }));
       return;
     }
+
+    // Rate limit: only allow calls once per 10 minutes per token
+    const callKey = `${tokenAddress}-${chain}`;
+    const lastCall = tokenCallTimestamps[callKey] || 0;
+    const now = Date.now();
+
+    if (now - lastCall < TOKEN_CALL_COOLDOWN_MS && state.data) {
+      // Skip this call if we have cached data
+      return;
+    }
+    tokenCallTimestamps[callKey] = now;
 
     try {
       setState((current) => ({ ...current, loading: current.data ? current.loading : true, error: null }));
@@ -87,7 +101,7 @@ export function useDexScreener(tokenAddress: string, chain = 'solana') {
         error: 'Failed to fetch token data.',
       }));
     }
-  }, [appendPoint, chain, tokenAddress]);
+  }, [appendPoint, chain, tokenAddress, state.data]);
 
   useEffect(() => {
     void fetchPair();

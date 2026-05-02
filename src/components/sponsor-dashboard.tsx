@@ -76,6 +76,38 @@ function SponsorDashboardContent({
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Auto-refresh payment verification when pending
+  useEffect(() => {
+    if (paymentState !== 'pending' || !createdPayment) {
+      return;
+    }
+
+    const pollPaymentStatus = async () => {
+      try {
+        const response = await fetch(`/api/payments/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentId: createdPayment.paymentId,
+            txSignature: txSignature || 'poll-only',
+          }),
+        });
+        if (response.ok) {
+          const json = (await response.json()) as { status?: string; reason?: string | null };
+          if (json.status === 'active' || json.status === 'pending_streamer_approval') {
+            setPaymentState('verified');
+          }
+        }
+      } catch {
+        // ignore polling errors
+      }
+    };
+
+    pollPaymentStatus();
+    const interval = setInterval(pollPaymentStatus, 15_000);
+    return () => clearInterval(interval);
+  }, [paymentState, createdPayment, txSignature]);
+
   useEffect(() => {
     async function loadStreams() {
       try {

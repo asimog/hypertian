@@ -13,6 +13,7 @@ export const COMMISSION_ENABLED = false;
 export const PUMPFUN_COMMISSION_BPS = COMMISSION_ENABLED ? 1_000 : 0;
 export const STREAM_HEARTBEAT_INTERVAL_MS = 60_000;
 export const STREAM_HEARTBEAT_STALE_MS = 90_000;
+export const STREAM_LIVE_CLEANUP_THRESHOLD_MS = 5 * 60_000; // 5 minutes without heartbeat = not live
 
 export const STREAM_PLATFORM_NAMES = {
   x: 'X',

@@ -1,6 +1,7 @@
 import { fail, ok } from '@/lib/http';
 import { verifyOverlayHeartbeatKey } from '@/lib/overlay-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { STREAM_HEARTBEAT_STALE_MS } from '@/lib/constants';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -16,13 +17,33 @@ export async function POST(request: Request) {
     }
 
     const supabase = createAdminClient();
+    const now = new Date().toISOString();
+
+    // First, get current stream state to check if overlay_verified_at needs to be set
+    const { data: currentStream, error: fetchError } = await supabase
+      .from('streams')
+      .select('overlay_verified_at')
+      .eq('id', body.streamId)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    // Build update payload - only set overlay_verified_at if not already set
+    const updatePayload: Record<string, unknown> = {
+      is_live: true,
+      last_heartbeat: now,
+    };
+
+    // Only set overlay_verified_at once (when it's null/undefined)
+    if (!currentStream?.overlay_verified_at) {
+      updatePayload.overlay_verified_at = now;
+    }
+
     const { data, error } = await supabase
       .from('streams')
-      .update({
-        is_live: true,
-        last_heartbeat: new Date().toISOString(),
-        overlay_verified_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', body.streamId)
       .select()
       .single();

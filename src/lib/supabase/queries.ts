@@ -422,7 +422,23 @@ export async function verifyDirectPaymentForAd(input: {
     throw new Error('paymentId or adId is required.');
   }
 
-  if (payment.status === 'verified' || ad.status === 'active' || ad.status === 'pending_streamer_approval') {
+  // If already verified with this transaction, return early (idempotency)
+  if (payment.status === 'verified' && payment.tx_hash === input.txSignature) {
+    return {
+      payment,
+      ad,
+      status: ad.status as AdStatus,
+      amountReceived: Number(payment.amount),
+      sweepTxHash: null,
+    };
+  }
+
+  // If payment is verified but with different tx, that's an error
+  if (payment.status === 'verified' && payment.tx_hash !== input.txSignature) {
+    throw new Error('Payment already verified with a different transaction.');
+  }
+
+  if (ad.status === 'active' || ad.status === 'pending_streamer_approval') {
     return {
       payment,
       ad,
@@ -473,6 +489,7 @@ export async function verifyDirectPaymentForAd(input: {
     now,
   });
 
+  // Update payment first (idempotent update - only set fields if not already set)
   const { data: updatedPayment, error: paymentError } = await supabase
     .from('payments')
     .update({
@@ -488,6 +505,7 @@ export async function verifyDirectPaymentForAd(input: {
     throw paymentError;
   }
 
+  // Update ad with payment activation state
   const { data: updatedAd, error: adError } = await supabase
     .from('ads')
     .update({
@@ -612,6 +630,19 @@ export async function verifyPayment(input: { paymentId: string; txHash: string }
     .single<PaymentRecord>();
   if (fetchPaymentError) {
     throw fetchPaymentError;
+  }
+
+  // Idempotency check - if already verified with this txHash, return early
+  if (payment.status === 'verified' && payment.tx_hash === input.txHash) {
+    const { data: ad, error: fetchAdError } = await supabase
+      .from('ads')
+      .select('*')
+      .eq('id', payment.ad_id)
+      .single<AdRecord>();
+    if (fetchAdError) {
+      return payment;
+    }
+    return payment;
   }
 
   const { data: ad, error: fetchAdError } = await supabase
