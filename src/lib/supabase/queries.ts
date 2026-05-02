@@ -214,8 +214,10 @@ export function sortStreamsByBookingPriority(streams: StreamRecord[]) {
       return platformDelta;
     }
 
-    if (left.is_live !== right.is_live) {
-      return left.is_live ? -1 : 1;
+    const leftHeartbeat = left.last_heartbeat ? new Date(left.last_heartbeat).getTime() : 0;
+    const rightHeartbeat = right.last_heartbeat ? new Date(right.last_heartbeat).getTime() : 0;
+    if (leftHeartbeat !== rightHeartbeat) {
+      return rightHeartbeat - leftHeartbeat;
     }
 
     return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();

@@ -32,7 +32,6 @@ export async function POST(request: Request) {
 
     // Build update payload - only set overlay_verified_at if not already set
     const updatePayload: Record<string, unknown> = {
-      is_live: true,
       last_heartbeat: now,
     };
 

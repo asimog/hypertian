@@ -203,3 +203,58 @@ export async function sweepEscrowBalance(input: {
     sweptPlatformAmount: platformLamports / LAMPORTS_PER_SOL,
   };
 }
+
+// Auto-trigger payment verification when balance is detected
+export async function autoTriggerAndSweepPayment(input: {
+  paymentId: string;
+  depositAddress: string;
+  encryptedSecret: string;
+  streamerWallet: string;
+  platformTreasuryWallet?: string | null;
+  expectedAmount: number;
+  expectedPlatformFee?: number | null;
+}) {
+  const connection = createSolanaConnection();
+  const address = new PublicKey(input.depositAddress);
+
+  // Check balance
+  const lamports = await connection.getBalance(address, 'confirmed');
+  const amountReceived = lamports / LAMPORTS_PER_SOL;
+
+  if (amountReceived < input.expectedAmount - 0.000001) {
+    return {
+      triggered: false,
+      reason: `Insufficient balance: ${amountReceived} SOL < ${input.expectedAmount} SOL`,
+      amountReceived,
+    };
+  }
+
+  // Get transaction signatures to find the payment
+  const signatures = await connection.getSignaturesForAddress(address, { limit: 10 }, 'confirmed');
+  const paymentSig = signatures.find((sig) => !sig.err)?.signature;
+
+  if (!paymentSig) {
+    return {
+      triggered: false,
+      reason: 'No valid payment transaction found.',
+      amountReceived,
+    };
+  }
+
+  // Sweep the funds
+  const sweepResult = await sweepEscrowBalance({
+    depositAddress: input.depositAddress,
+    encryptedSecret: input.encryptedSecret,
+    streamerWallet: input.streamerWallet,
+    platformTreasuryWallet: input.platformTreasuryWallet,
+    expectedStreamerAmount: amountReceived,
+    expectedPlatformFeeAmount: input.expectedPlatformFee,
+  });
+
+  return {
+    triggered: true,
+    txHash: paymentSig,
+    sweepResult,
+    amountReceived,
+  };
+}

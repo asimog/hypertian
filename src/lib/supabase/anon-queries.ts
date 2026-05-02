@@ -124,7 +124,6 @@ export interface DirectoryStream {
   default_banner_url: string | null;
   default_chart_token_address: string | null;
   pump_mint: string | null;
-  is_live: boolean;
   last_heartbeat: string | null;
   created_at: string;
 }
@@ -134,7 +133,7 @@ export async function listLiveDirectoryStreams() {
   const cutoff = new Date(Date.now() - DIRECTORY_LIVE_WINDOW_MS).toISOString();
   const { data, error } = await supabase
     .from('streams')
-    .select('id, display_name, platform, profile_url, stream_url, price_sol, default_banner_url, default_chart_token_address, pump_mint, is_live, last_heartbeat, created_at')
+    .select('id, display_name, platform, profile_url, stream_url, price_sol, default_banner_url, default_chart_token_address, pump_mint, last_heartbeat, created_at')
     .eq('is_hidden', false)
     .gte('last_heartbeat', cutoff)
     .order('last_heartbeat', { ascending: false })
@@ -155,9 +154,9 @@ export async function getStreamHeartbeatStatus(streamId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('streams')
-    .select('id, is_live, last_heartbeat, overlay_verified_at')
+    .select('id, last_heartbeat, overlay_verified_at')
     .eq('id', streamId)
-    .maybeSingle<{ id: string; is_live: boolean; last_heartbeat: string | null; overlay_verified_at: string | null }>();
+    .maybeSingle<{ id: string; last_heartbeat: string | null; overlay_verified_at: string | null }>();
 
   if (error) {
     throw error;
@@ -172,7 +171,7 @@ export async function getStreamHeartbeatStatus(streamId: string) {
 
   return {
     streamId: data.id,
-    isLive: Boolean(data.is_live) && fresh,
+    isLive: fresh,
     lastHeartbeat: data.last_heartbeat,
     overlayVerifiedAt: data.overlay_verified_at,
     everReceived: Boolean(heartbeatMs),
@@ -415,7 +414,7 @@ export async function adminTriggerHeartbeat(streamId: string) {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('streams')
-    .update({ is_live: true, last_heartbeat: now, overlay_verified_at: now })
+    .update({ last_heartbeat: now, overlay_verified_at: now })
     .eq('id', streamId)
     .select()
     .single<StreamRecord>();

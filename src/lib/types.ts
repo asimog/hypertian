@@ -36,7 +36,6 @@ export interface StreamRecord {
   pump_mint: string | null;
   pump_deployer_wallet: string | null;
   pump_creator_verified: boolean | null;
-  is_live: boolean;
   last_heartbeat: string | null;
   owner_session?: string | null;
   is_hidden?: boolean | null;

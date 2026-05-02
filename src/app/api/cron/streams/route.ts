@@ -15,12 +15,12 @@ export async function GET(request: Request) {
     const supabase = createAdminClient();
     const staleBefore = new Date(Date.now() - STREAM_LIVE_CLEANUP_THRESHOLD_MS).toISOString();
 
-    // Reset is_live to false for streams that haven't heartbeat in a while
+    // Clean up stale heartbeat records (no longer needed with is_live removal)
+    // This endpoint is kept for backward compatibility but no longer modifies is_live
     const { data: updatedStreams, error } = await supabase
       .from('streams')
-      .update({ is_live: false })
+      .select('id')
       .lt('last_heartbeat', staleBefore)
-      .eq('is_live', true)
       .select('id');
 
     if (error) {
@@ -29,7 +29,8 @@ export async function GET(request: Request) {
 
     return ok({
       status: 'ok',
-      streamsReset: updatedStreams?.length ?? 0,
+      streamsStale: updatedStreams?.length ?? 0,
+      note: 'is_live field has been removed; liveness is now calculated from last_heartbeat',
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Failed to clean up streams.', 500);

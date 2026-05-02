@@ -15,7 +15,7 @@ export async function GET() {
 
     const supabase = createAdminClient();
     const [streamsRes, adsRes] = await Promise.all([
-      supabase.from('streams').select('id, user_id, platform, is_live, last_heartbeat, created_at').order('created_at', { ascending: false }),
+      supabase.from('streams').select('id, user_id, platform, last_heartbeat, created_at').order('created_at', { ascending: false }),
       supabase.from('ads').select('*').eq('sponsor_id', user.id).order('created_at', { ascending: false }).limit(20),
     ]);
 

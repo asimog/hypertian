@@ -60,9 +60,10 @@ describe('/api/streams/heartbeat', () => {
     expect(response.status).toBe(200);
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
-        is_live: true,
+        last_heartbeat: expect.any(String),
       }),
     );
+    expect(update.mock.calls[0][0]).not.toHaveProperty('is_live');
 
     // Note: verification_status is not updated (this is correct)
     expect(update.mock.calls[0][0]).not.toHaveProperty('verification_status');
