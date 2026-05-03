@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative z-10 min-h-screen">
       {!isHome ? (
-        <header className="sticky top-0 z-40 px-4 pt-4 sm:px-5">
+        <header className="sticky top-0 z-40 px-4 pt-8 sm:px-5">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-1 py-1 relative md:flex-row md:items-center">
             <nav aria-label="Primary" className="flex flex-wrap items-center gap-1.5 md:absolute md:left-1/2 md:-translate-x-1/2">
               {NAV_ITEMS.map((item) => {
