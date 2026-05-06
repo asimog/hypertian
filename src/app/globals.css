@@ -116,7 +116,7 @@ textarea:focus-visible {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  background: var(--gradient-bg);
+  background: #000000;
 }
 
 .site-background-canvas {
@@ -130,6 +130,7 @@ textarea:focus-visible {
 .site-background-vignette {
   position: absolute;
   inset: 0;
+  display: none;
   background:
     radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.28) 72%, rgba(0, 0, 0, 0.7) 100%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent 18%, transparent 72%, rgba(0, 0, 0, 0.28));
@@ -138,6 +139,7 @@ textarea:focus-visible {
 .site-background-grid {
   position: absolute;
   inset: 0;
+  display: none;
   opacity: 0.18;
   background-image:
     linear-gradient(rgba(124, 228, 210, 0.08) 1px, transparent 1px),
@@ -150,6 +152,7 @@ textarea:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 1;
+  display: none;
   pointer-events: none;
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.02), transparent 30%),
