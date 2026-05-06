@@ -14,12 +14,29 @@ export default function HomePage() {
 
       <nav aria-label="Primary routes" className="home-grid-wrap">
         <div className="home-grid">
-          {boxes.map((box) => (
-            <Link className="home-box" href={box.href} key={box.href}>
-              <h2 className="home-box-title">{box.title}</h2>
-              <p className="home-box-desc">{box.desc}</p>
-            </Link>
-          ))}
+          {boxes.map((box) => {
+            const isExternal = box.href.startsWith('http');
+            if (isExternal) {
+              return (
+                <a
+                  className="home-box"
+                  href={box.href}
+                  key={box.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <h2 className="home-box-title">{box.title}</h2>
+                  <p className="home-box-desc">{box.desc}</p>
+                </a>
+              );
+            }
+            return (
+              <Link className="home-box" href={box.href} key={box.href}>
+                <h2 className="home-box-title">{box.title}</h2>
+                <p className="home-box-desc">{box.desc}</p>
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </div>
@@ -46,5 +63,15 @@ const boxes = [
     href: '/music',
     title: 'Music',
     desc: 'Play music across the site while the global orb and particles react to sound.',
+  },
+  {
+    href: '/leaderboard',
+    title: 'Leaderboard',
+    desc: 'View the streamers with highest income & advertisers with the highest spend.',
+  },
+  {
+    href: 'https://hypermyths.com',
+    title: 'HyperMythX',
+    desc: 'Explore the HyperMyth reality-expansion engine.',
   },
 ] as const;

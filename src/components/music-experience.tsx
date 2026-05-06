@@ -2,13 +2,14 @@
 
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { Disc3, Pause, Play, SkipBack, SkipForward, Upload } from 'lucide-react';
-import { useMusic } from '@/components/music-provider';
-import { createEarthRenderer } from '@/components/earth-renderer';
+import { useMusic, type AudioFeatures } from '@/components/music-provider';
+import { drawCentralOrb, drawOrbLightRays, type OrbRay } from '@/components/orb-renderer';
 
 export function MusicExperience() {
   const music = useMusic();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const featuresRef = useRef(music.features);
+  const raysRef = useRef<OrbRay[]>([]);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [dropActive, setDropActive] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -27,9 +28,7 @@ export function MusicExperience() {
 
     let raf = 0;
     let time = 0;
-    let rotation = 0;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const earth = createEarthRenderer(384);
 
     function resize() {
       const rect = canvas.getBoundingClientRect();
@@ -38,102 +37,71 @@ export function MusicExperience() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function draw() {
-      time += 0.016;
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      const cx = width / 2;
-      const cy = height / 2;
-      const audio = featuresRef.current;
-      const energy = audio.isPlaying ? audio.volume : 0.08;
-      const bass = audio.isPlaying ? audio.bass : 0.06;
-      const radius = Math.min(width, height) * (0.18 + bass * 0.085 + energy * 0.022);
+     let lastTime = 0;
 
-      ctx.clearRect(0, 0, width, height);
+     function draw(now: number) {
+       const dt = (now - lastTime) / 1000;
+       lastTime = now;
+       time += 0.016;
+       const width = canvas.clientWidth;
+       const height = canvas.clientHeight;
+       const cx = width / 2;
+       const cy = height / 2;
+       const audio = featuresRef.current;
+       const energy = audio.isPlaying ? audio.volume : 0.08;
+       const bass = audio.isPlaying ? audio.bass : 0.06;
+       const radius = Math.min(width, height) * (0.18 + bass * 0.085 + energy * 0.022);
 
-      const sky = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius * 2.8);
-      sky.addColorStop(0, `rgba(124, 228, 210, ${0.12 + energy * 0.12})`);
-      sky.addColorStop(0.44, `rgba(134, 182, 255, ${0.08 + audio.high * 0.14})`);
-      sky.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = sky;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius * 2.8, 0, Math.PI * 2);
-      ctx.fill();
+       ctx.clearRect(0, 0, width, height);
 
-      for (let ring = 0; ring < 3; ring += 1) {
-        const ringRadius = radius * (1.42 + ring * 0.34 + energy * 0.12);
-        ctx.strokeStyle = `rgba(124, 228, 210, ${0.13 - ring * 0.03 + audio.mid * 0.08})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let i = 0; i <= 220; i += 1) {
-          const angle = (i / 220) * Math.PI * 2;
-          const wobble = Math.sin(angle * 5 + time * (1.5 + ring) + ring) * radius * 0.025 * (1 + audio.high);
-          const x = cx + Math.cos(angle) * (ringRadius + wobble);
-          const y = cy + Math.sin(angle) * (ringRadius * 0.34 + wobble * 0.5);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.stroke();
-      }
+       const sky = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius * 2.8);
+       sky.addColorStop(0, `rgba(124, 228, 210, ${0.12 + energy * 0.12})`);
+       sky.addColorStop(0.44, `rgba(134, 182, 255, ${0.08 + audio.high * 0.14})`);
+       sky.addColorStop(1, 'rgba(0, 0, 0, 0)');
+       ctx.fillStyle = sky;
+       ctx.beginPath();
+       ctx.arc(cx, cy, radius * 2.8, 0, Math.PI * 2);
+       ctx.fill();
 
-      rotation += 0.0012 + bass * 0.018 + energy * 0.004;
+       for (let ring = 0; ring < 3; ring += 1) {
+         const ringRadius = radius * (1.42 + ring * 0.34 + energy * 0.12);
+         ctx.strokeStyle = `rgba(124, 228, 210, ${0.13 - ring * 0.03 + audio.mid * 0.08})`;
+         ctx.lineWidth = 1;
+         ctx.beginPath();
+         for (let i = 0; i <= 220; i += 1) {
+           const angle = (i / 220) * Math.PI * 2;
+           const wobble = Math.sin(angle * 5 + time * (1.5 + ring) + ring) * radius * 0.025 * (1 + audio.high);
+           const x = cx + Math.cos(angle) * (ringRadius + wobble);
+           const y = cy + Math.sin(angle) * (ringRadius * 0.34 + wobble * 0.5);
+           if (i === 0) ctx.moveTo(x, y);
+           else ctx.lineTo(x, y);
+         }
+         ctx.closePath();
+         ctx.stroke();
+       }
 
-      if (earth) {
-        earth.redraw(rotation, energy * 0.22, audio.high);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(earth.buffer, cx - radius, cy - radius, radius * 2, radius * 2);
-        ctx.restore();
-      } else {
-        const fallback = ctx.createRadialGradient(cx - radius * 0.34, cy - radius * 0.38, radius * 0.08, cx, cy, radius);
-        fallback.addColorStop(0, '#5fbf6a');
-        fallback.addColorStop(0.4, '#1f7d95');
-        fallback.addColorStop(1, '#061015');
-        ctx.fillStyle = fallback;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+       if (energy > 0.2) {
+         const spawnCount = Math.ceil(energy * 3);
+         for (let s = 0; s < spawnCount; s += 1) {
+           const newRay = {
+             angle: Math.random() * Math.PI * 2,
+             speed: 1.8 + Math.random() * 2.8 + energy * 2.2,
+             length: 120 + Math.random() * 240 + energy * 180,
+             width: 0.8 + Math.random() * 2.4 + energy * 1.6,
+             life: 260 + Math.random() * 220,
+             maxLife: 480,
+             hue: Math.random(),
+             jitter: (Math.random() - 0.5) * 0.32,
+           };
+           raysRef.current.push(newRay);
+         }
+       }
 
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      const rim = ctx.createRadialGradient(cx, cy, radius * 0.88, cx, cy, radius * 1.14);
-      rim.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      rim.addColorStop(0.6, `rgba(134, 182, 255, ${0.22 + audio.high * 0.34})`);
-      rim.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = rim;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius * 1.14, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+       drawCentralOrb(ctx, width, height, audio, now);
+       drawOrbLightRays(ctx, width, height, now, dt, audio, raysRef.current);
 
-      const particles = 130;
-      for (let i = 0; i < particles; i += 1) {
-        const angle = (i / particles) * Math.PI * 2 + time * (0.12 + audio.high * 0.14);
-        const lane = 1.25 + ((i % 17) / 17) * (0.9 + audio.volume * 0.55);
-        const pulse = Math.sin(time * 3 + i) * radius * 0.06 * (0.2 + audio.bass * 1.4);
-        const x = cx + Math.cos(angle) * radius * lane + pulse;
-        const y = cy + Math.sin(angle * 1.4) * radius * lane * 0.52;
-        const size = 1 + ((i % 5) / 5) * 1.8 + audio.high * 2.8;
-        ctx.fillStyle = i % 4 === 0 ? 'rgba(245, 251, 251, 0.86)' : 'rgba(124, 228, 210, 0.58)';
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      if (audio.beat) {
-        ctx.strokeStyle = `rgba(245, 251, 251, ${0.55 + audio.bass * 0.25})`;
-        ctx.lineWidth = 2.4 + audio.bass * 1.6;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius * (1.18 + audio.bass * 0.85), 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      raf = requestAnimationFrame(draw);
-    }
+       raf = requestAnimationFrame(draw);
+     }
 
     resize();
     window.addEventListener('resize', resize);
@@ -181,7 +149,7 @@ export function MusicExperience() {
   return (
     <div className="music-page grid gap-6">
       <section className="music-stage panel overflow-hidden rounded-3xl">
-        <canvas ref={canvasRef} aria-label="Audio reactive Earth particle visualizer" className="music-canvas" />
+        <canvas ref={canvasRef} aria-label="Audio reactive orb visualizer" className="music-canvas" />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
@@ -190,7 +158,7 @@ export function MusicExperience() {
             <div className="text-[11px] uppercase tracking-[0.32em] text-[var(--color-accent)]">Music</div>
             <h1 className="mt-1 max-w-xl text-3xl font-semibold text-white md:text-5xl">Reactive audio sphere</h1>
             <p className="mt-2 max-w-xl text-sm text-[var(--color-copy-soft)]">
-              Play the local playlist, drop in MP3s, or stream YouTube audio while the Earth-like orb reacts live.
+              Play the local playlist, drop in MP3s, or stream YouTube audio while the glowing orb reacts live.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
